@@ -1,6 +1,7 @@
 # 版本记录 · media-library-api
 
-> 每个版本对应本目录下的一个 zip 包（**整包**）。发布包解压后内容直接放入宝塔站点根即可运行。
+> 每个版本对应 `../发布包/media-library-api/` 下的一个 zip 包（**整包**）。发布包解压后内容直接放入宝塔站点根即可运行。
+> 本目录（`发布版本/`）另放一份**不打包的最新源码**，打开即见、可直接部署。
 > **增量升级包**（只含变化文件，给在跑的站点覆盖升级）另存于 `../升级包/<项目>/`。
 > 源码对应位置：`../../原始源码/media-library-api/`
 
@@ -8,6 +9,7 @@
 
 | 版本 | 日期 | 发布包 | 主要内容 |
 |---|---|---|---|
+| v1.6.4 | 2026-09-23 | `media-library-api-v1.6.4.zip` | **紧急修复：首页 Fatal error `Class 'Config' not found`** —— `home.php` 是全局命名空间文件，却用了短类名 `Config::sub(...)` 而没有 `use Core\Config;`，站点一装好、一访问首页就 500（v1.6.0 引入，因当时站点从未装成所以一直没暴露）；本次补上 `use Core\Config;` 与 `core/Site.php` 的显式 require（**零行为变化**）；同时新增发布前必跑项 **`phpclassscan.py` 类名解析扫描**（`phpcheck`/`php56scan` 查不出这类运行时命名空间问题）；**数据库无变更** |
 | v1.6.3 | 2026-09-22 | `media-library-api-v1.6.3.zip` | **恢复网页版安装器（带自锁）**：新增 **`install.php` 网页安装向导**（环境自检 → 填表 → 一键安装，深色适配 + 手机端单列）—— **已安装即 404**（存在 `config/install.lock` 或 config.php 的 db 已填真值就对所有人返回 404，与文件不存在无异，没人能借此重装站点），只在"尚未安装"时可用；新增 **`core/Installer.php` 安装内核**，`install.php` 与 `tools/install-cli.php` 共用同一份建表 / 生成配置逻辑；守卫与推荐的 Nginx 规则**精确放行 `/install.php`**（故意不写 install，否则未装就永远装不了），其余 setup/upgrade/update/install.php.bak 仍一律 404；首页引导页新增「🚀 开始网页安装」主按钮；自检与后台「安全防护」安装器判据改为**三态**（未上传 / 已自锁 / 尚未安装因而可用）；`sql/install.sql` 补齐 `app_users` / `app_requests`；安装备忘移到 `config/install-info.txt`（不再裸放公网）；FAQ 新增"网页安装器安全吗"与"https 502 / http 正常"两条；`preview/` 新增 **`install.html` 安装向导预览** 与 **`notinstalled.html` 未安装引导页预览**；**`安装说明.txt` / `功能说明.txt` 两份说明书首次随整包发布** |
 | v1.6.2 | 2026-09-22 | `media-library-api-v1.6.2.zip` | **注册 + 资源请求**：前台新增**注册 / 登录 / 退出**与独立页 **`/request`「资源请求」**（注册用户可提交想找的资源：片名 / 类型 / 年份 / 备注 / 联系方式，并能查看进度、撤回未处理请求）；后台新增一级页签 **「资源请求」**（请求列表 + 注册用户，可改状态 / 回复 / 删除 / 重置密码 / 禁用账号）；「站点设置」新增 **资源请求** 二级页（13 项开关：开放注册 / 必须登录才能提交 / 注册审核 / 图形验证 / 游客可看 / 公开列表 / 显示联系方式 / 导航入口 / 每日上限 / 最少标题字数 / 页面标题 / 页面简介 / 站长公告）；两张表 **自动创建 + 缺列自愈**；自带风控（IP 注册限频 / 登录锁定 / 每日提交上限 / 同名去重 / 蜜罐 / 算术验证码）；密码 `password_hash` 加盐；自检新增 **第 11 组「注册与资源请求」**；`preview/` 新增注册页 / 资源请求页 / 后台资源请求三个预览页 |
 | v1.6.1 | 2026-09-22 | `media-library-api-v1.6.1.zip` | **全站响应式自适应**：主页与后台同时适配手机 / 平板 / 大屏（380 / 560 / 768 / 1024 / 1400 / 1800px 六档断点 + 手机横屏）；前台明暗模式新增「**跟随系统**」并设为默认（经典 / 简约模板通用）；前台顶栏折行、导航与工具栏横滑、卡片 320px 屏仍两列、内页下载地址竖排；后台新增**明暗切换**、手机端**整屏弹层**、**表格横滑且首列粘住**；刘海安全区 / 触屏去 hover 粘滞 / 减少动画 / 高对比度 / 打印排版 / iOS 输入框防缩放；自检新增 **10.6b「响应式自适应」**；`preview/` 新增多设备预览台 |
@@ -26,11 +28,74 @@
 
 | 升级包 | 从 → 到 | 内容 |
 |---|---|---|
+| `media-library-api-update-v1.6.3-to-v1.6.4.zip` | v1.6.3 → v1.6.4 | **2 个变化文件（新增 0 + 修改 2）**：`home.php`（P0 修复）、`index.php`（版本号）+ `UPGRADE.txt` / `UPGRADE.md` 升级说明（存放：`升级包/media-library-api/`） |
 | `media-library-api-update-v1.6.2-to-v1.6.3.zip` | v1.6.2 → v1.6.3 | 13 个变化文件（新增 4 + 修改 9）+ `UPGRADE.txt` / `UPGRADE.md` 升级说明（存放：`升级包/media-library-api/`） |
 | `media-library-api-update-v1.6.1-to-v1.6.2.zip` | v1.6.1 → v1.6.2 | 14 个变化文件（新增 4 + 修改 10）+ `UPGRADE.txt` / `UPGRADE.md` 升级说明（存放：`升级包/media-library-api/`） |
 | `media-library-api-update-v1.6.0-to-v1.6.1.zip` | v1.6.0 → v1.6.1 | 9 个变化文件（新增 0 + 修改 9）+ `UPGRADE.txt` / `UPGRADE.md` 升级说明（存放：`升级包/media-library-api/`） |
 | `media-library-api-update-v1.5.0-to-v1.6.0.zip` | v1.5.0 → v1.6.0 | 16 个变化文件（新增 3 + 修改 13）+ `UPGRADE.txt` / `UPGRADE.md` 升级说明（存放：`升级包/media-library-api/`） |
 | `media-library-api-update-v1.4.1-to-v1.5.0.zip` | v1.4.1 → v1.5.0 | 17 个变化文件（新增 2 + 修改 15）+ `UPGRADE.txt` / `UPGRADE.md` 升级说明（存放：`升级包/media-library-api/`） |
+
+---
+
+## v1.6.4（2026-09-23）
+
+**紧急修复：一装好就访问首页即 500 —— `Fatal error: Class 'Config' not found`**
+
+### 1) 症状
+
+站点安装完成后打开首页（`http://你的域名/`）直接白屏报错：
+
+```
+Fatal error: Uncaught Error: Class 'Config' not found in /www/wwwroot/xxx/home.php:33
+Stack trace: #0 /www/wwwroot/xxx/index.php(172): require() #1 {main} thrown in .../home.php on line 33
+```
+
+### 2) 根因
+
+`home.php` 是**全局命名空间**文件（没有 `namespace` 声明），其中「最新更新」区块
+（v1.6.0 引入）写的是**短类名**：
+
+```php
+&& \Core\Site::flag(Config::sub('redirect', 'latest', 1))) {
+```
+
+- `\Core\Site` 带了完整命名空间 → 正常；
+- `Config::` 既没有前导 `\`，文件里也没有 `use Core\Config;`
+  → PHP 在**全局命名空间**里找 `Config` 类 → 找不到 → 致命错误。
+
+同一段代码在 `core/Views.php` 里是正确的，因为那个文件有 `namespace Core;`，
+`Config::` 会自动解析成 `Core\Config`。**从 Views.php 抄到 home.php 时漏掉了命名空间差异。**
+
+> 为什么 v1.6.0 ~ v1.6.3 一直没暴露：这段时间站点始终处于「未安装」状态，
+> 首页走的是「站点尚未安装」引导页，`home.php` 从未被执行过。站点一装好，进门就炸。
+
+### 3) 修复
+
+`home.php` 头部补齐依赖（两行改动，零行为变化）：
+
+```php
+require_once __DIR__ . '/core/Site.php';   // ★ 下面用到 \Core\Site::flag()
+...
+use Core\Config;                          // ★ 短类名 Config:: 必须显式 use
+use Core\Views;
+use Core\CacheStore;
+```
+
+### 4) 顺手加固：新增「类名解析扫描」
+
+`phpcheck`（括号结构）和 `php56scan`（PHP 7.0+ 语法）**都查不出这类"运行时才炸"的命名空间问题**。
+本次新增发布前必跑项 **`phpclassscan.py`**：剥离注释与字符串后，按 PHP 的命名空间解析规则
+逐个核对每个 `Foo::` / `new Foo` / 类型提示，凡解析不到的类名一律报出并附上下文。
+全项目 44 个 PHP 文件已扫过，本类问题清零（仅余 2 处内嵌 JS 的 `new FormData` / `new Uint8Array` 误报，已人工确认）。
+
+### 5) 影响面
+
+| 项 | 说明 |
+|---|---|
+| 受影响版本 | **v1.6.0 ~ v1.6.3**（只要站点已安装，访问首页即 500） |
+| 受影响文件 | **仅 `home.php`** |
+| 最快修复 | 用本版 `home.php` 覆盖线上同名文件即可（`index.php` 只改了版本号，可选覆盖） |
+| 数据库 | **无任何变更**，不用导 SQL |
 
 ---
 

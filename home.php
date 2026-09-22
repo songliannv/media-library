@@ -11,10 +11,12 @@ ml_guard_shield(__FILE__);
 require_once __DIR__ . '/core/Config.php';
 require_once __DIR__ . '/core/DB.php';
 require_once __DIR__ . '/core/CacheStore.php';
+require_once __DIR__ . '/core/Site.php';   // ★ v1.6.4：下面用到 \Core\Site::flag()
 require_once __DIR__ . '/core/Views.php';
 
-use Core\Views;
-use Core\CacheStore;
+use Core\Config;                          // ★ v1.6.4：全文用的是短类名 Config::，
+use Core\Views;                           //    在全局命名空间下必须显式 use，
+use Core\CacheStore;                      //    否则运行时报 Class 'Config' not found
 
 $sortMap = ['api_calls' => 'api_calls', 'clicks' => 'clicks', 'updated_at' => 'updated_at', 'rating' => 'rating'];
 $sort = (isset($sortMap[(isset($_GET['sort']) ? $_GET['sort'] : 'clicks')]) ? $sortMap[(isset($_GET['sort']) ? $_GET['sort'] : 'clicks')] : 'clicks');

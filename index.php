@@ -16,7 +16,7 @@
  *             或命令行 php tools/install-cli.php —— 两者共用 core/Installer.php。
  */
 define('ML_APP', true);
-define('ML_APP_VERSION', '1.6.3');
+define('ML_APP_VERSION', '1.6.4');
 
 require_once __DIR__ . '/core/Guard.php';      // ← 必须最早加载
 require_once __DIR__ . '/core/DB.php';
