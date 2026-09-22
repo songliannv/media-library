@@ -11,19 +11,19 @@
 
 | 分支 | 内容 | 用途 |
 |---|---|---|
-| **`main`**（默认） | README.md、`安装说明.txt`、`功能说明.txt` | 说明书 / 门面，先看这里 |
-| **`source`** | **源码全树**（仓库根 = 站点根，可直接部署） | 拿代码 / 部署用 |
+| **`main`**（默认） | **源码全树** + `README.md` + `安装说明.txt` + `功能说明.txt` + `CHANGELOG.md` | **打开就能看代码**；仓库根 = 站点根 |
+| **`source`** | **纯源码全树**（不带上面那几份文档） | 只想要干净代码时用 |
 
 ```bash
-# 取源码（推荐）
-git clone -b source https://github.com/songliannv/media-library.git
-
-# 只要说明书
+# 拿源码（推荐）—— 仓库根就是站点根，可直接部署
 git clone https://github.com/songliannv/media-library.git
+
+# 只要纯源码（不含 README / 说明书）
+git clone -b source https://github.com/songliannv/media-library.git
 ```
 
-> `source` 分支解压出来就是**可直接放进宝塔站点根**的目录结构，
-> 不用再剪切子文件夹。
+> 两个分支的**源码内容完全一致**，`main` 只是多带了几份说明书。
+> 克隆出来就是**可直接放进宝塔站点根**的目录结构，不用再剪切子文件夹。
 
 ---
 
