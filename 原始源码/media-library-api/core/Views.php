@@ -575,8 +575,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .tagcloud.tc-init .tc-t{transition:none!important}
 .tagcloud.on .tc-t{transition:transform .58s cubic-bezier(.22,.9,.28,1),background .2s,color .2s,box-shadow .2s}
 .tagcloud.on .tc-t:hover{background:#fff;color:var(--pri);box-shadow:0 10px 24px rgba(0,0,0,.22)}
-.tc-note{margin:10px 0 0;font-size:12.5px;opacity:.84;text-align:center}
-.tc-note b{font-weight:600}
 .tc-empty{margin:0;padding:44px 0;text-align:center;font-size:14px;opacity:.92}
 /* --- 列表页「当前标签」提示条 --- */
 .tagbar{display:flex;align-items:center;gap:9px;margin:0 0 14px;font-size:13.5px;color:var(--mut);flex-wrap:wrap}
@@ -592,7 +590,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   .tc-t{padding:4px 10px;font-size:12.5px;border-radius:16px}
   .tc-t.tc-h1{font-size:15px}
   .tc-t.tc-h2{font-size:13.5px}
-  .tc-note{font-size:11.5px}
   .tagbar{font-size:12.5px}
   .adm-btn a{width:100%;text-align:center}
 }
@@ -738,15 +735,12 @@ HTML;
             }
             if ($tagLinks === '') {
                 $tagLinks = '<p class="tc-empty">暂无热门标签 —— 请先到后台同步一次资料。</p>';
-                $tagNote  = '热门标签 · 鼠标移入自动排列，点击标签查看该标签下的资料';
-            } else {
-                $tagNote  = '共 <b>' . count($hotTags) . '</b> 个热门标签 · 按累计点击量排序 · 鼠标移入自动归位，点击标签查看该标签下的资料';
             }
+            /* ★ v1.9.4：去掉底部「热门标签 · 鼠标移入自动排列…」说明文字 */
             $bannerHtml = '<section class="banner tagcloud" id="mlTagCloud">' . "\n"
                 . '  <div class="in">' . "\n"
                 . '    <h1 class="sr-only">' . $bannerTitle . '</h1>' . "\n"
                 . '    <div class="tc-stage" id="mlTcStage">' . $tagLinks . '</div>' . "\n"
-                . '    <p class="tc-note">' . $tagNote . '</p>' . "\n"
                 . '  </div>' . "\n"
                 . '</section>';
 

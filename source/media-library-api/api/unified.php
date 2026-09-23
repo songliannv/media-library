@@ -145,7 +145,12 @@ class Unified
         $map = ['tmdb' => Tmdb::class, 'rawg' => Rawg::class, 'hongguoduanju' => HongguoDuanju::class];
         $out = [];
         foreach ($enabled as $e) {
-            if (isset($map[$e])) { $cls = $map[$e]; $out[] = new $cls(); }
+            if (!isset($map[$e])) { continue; }
+            /* ★ v1.9.4：加一层存在性保护 —— 小写环境/老包覆盖升级时类可能没加载，
+               直接 new 会 Fatal error（catch 也抓不住），这里跳过更安全。 */
+            if (!class_exists($map[$e])) { continue; }
+            $cls = $map[$e];
+            $out[] = new $cls();
         }
         return $out;
     }
@@ -641,6 +646,18 @@ class Unified
             $b  = self::query();
             $id = (int) ((isset($b['id']) ? $b['id'] : 0));
             if ($id < 1) { Json::error(400, '缺少记录 id'); }
+            /* ★ v1.9.4：用户名 / 邮箱 / 管理员标记（原先这三个字段前端发了、后端没接，
+               等于「提示已更新但什么都没改」） */
+            if (array_key_exists('username', $b) || array_key_exists('email', $b) || array_key_exists('is_admin', $b)) {
+                $pIsAdmin = array_key_exists('is_admin', $b) ? ((int) $b['is_admin'] === 1) : null;
+                $pfErr = \Core\User::updateUser(
+                    $id,
+                    (isset($b['username']) ? $b['username'] : ''),
+                    (isset($b['email']) ? $b['email'] : ''),
+                    $pIsAdmin
+                );
+                if ($pfErr !== '') { Json::error(400, $pfErr); }
+            }
             /* 状态与密码各自独立：只重置密码时不会顺手把「已禁用」改成「正常」 */
             if (array_key_exists('status', $b) && $b['status'] !== '' && $b['status'] !== null) {
                 $err = \Core\User::saveUser($id, $b['status']);
@@ -908,7 +925,7 @@ class Unified
                 if (in_array($x, $allow, true)) { $pick[] = $x; }
             }
             if (!$pick) {
-                return '请至少启用一个数据源（TMDB / RAWG）。';
+                return '请至少启用一个数据源（TMDB / RAWG / 红果短剧）。';
             }
             $set['adapters'] = \Core\Settings::listToStr($pick);
         }
@@ -1163,18 +1180,7 @@ class Unified
         $body = json_decode((string) file_get_contents('php://input'), true);
         $body = is_array($body) ? $body : [];
         return array_merge($qs, $body);
-
-
-    // ★ v1.9.0: 自动刮削 - 补全空图片
-    public static function handleAutoScrape(array $body): array
-    {
-        $type = (string) ($body['type'] ?? '');
-        $limit = max(10, min(500, (int) ($body['limit'] ?? 50)));
-        $count = self::autoScrapeImages($type, $limit);
-        return ['scraped' => $count];
     }
-    }
-
 
     // ★ v1.9.0: 自动刮削 - 补全空图片
     public static function handleAutoScrape(array $body): array

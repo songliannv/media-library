@@ -7,14 +7,14 @@ require_once __DIR__ . '/Guard.php';
 ml_guard_shield(__FILE__);
 
 /**
- * 内容分类单一来源（short / movie / tv / anime / variety / game）。
+ * 内容分类单一来源（short / movie / tv / anime / variety / game / book / music / other）。
  * 后台「按分类建栏目 + 新增」、主页类型筛选、内页扩展字段渲染 都从这里取，
  * 新增分类只需改本文件，无需动路由与前台。
  */
 class Categories
 {
-    /** 站点使用的 6 大分类（顺序即导航顺序） */
-    const TYPES = ['short', 'movie', 'tv', 'anime', 'variety', 'game', 'book', 'music'];
+    /** 站点使用的分类（顺序即导航顺序）★ v1.9.4：补齐书籍/音乐/其他 */
+    const TYPES = ['short', 'movie', 'tv', 'anime', 'variety', 'game', 'book', 'music', 'other'];
 
     /** 类型中文标签 */
     const LABELS = [
@@ -26,6 +26,7 @@ class Categories
         'game'    => '游戏',
         'book'    => '书籍',
         'music'   => '音乐',
+        'other'   => '其他',
         'person'  => '人物',   // TMDB 人物，库中存在但不单独建栏目
         'manual'  => '自定义',
     ];
@@ -71,6 +72,10 @@ class Categories
             ['k' => 'album',     'label' => '专辑',   'type' => 'text', 'ph' => '专辑名'],
             ['k' => 'tracks',    'label' => '曲目数', 'type' => 'text', 'ph' => '如 12'],
         ],
+        // ★ v1.9.4：新增「其他」兜底分类
+        'other'   => [
+            ['k' => 'remark',    'label' => '备注',   'type' => 'text', 'ph' => '补充说明'],
+        ],
     ];
 
     /** 扩展字段 key → 中文展示名（内页渲染用） */
@@ -90,6 +95,7 @@ class Categories
         'artist'    => '艺术家',
         'album'     => '专辑',
         'tracks'    => '曲目数',
+        'remark'    => '备注',
     ];
 
     /** 对外公开的分类 schema（后台前端拉取后动态生成表单） */

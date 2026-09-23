@@ -1164,16 +1164,91 @@ class User
             $r = $st->fetch();
             $total = $r ? (int) $r['n'] : 0;
 
+            /* ★ v1.9.4：列表要带上 is_admin —— 管理员身份记在 email 字段（ADMIN_TAG），
+               前端据此显示「管理员/普通用户」。之前不返回该字段，后台一律显示普通用户。 */
+            $listArgs = $args;
+            $listArgs[':atag'] = self::ADMIN_TAG;
             $st = $pdo->prepare(
-                'SELECT `id`,`username`,`email`,`status`,`ip`,`req_count`,`created_at`,`last_login`
+                'SELECT `id`,`username`,`email`,`status`,`ip`,`req_count`,`created_at`,`last_login`,
+                        CASE WHEN `email`=:atag THEN 1 ELSE 0 END AS `is_admin`
                  FROM `' . self::T_USER . '`' . $w . '
                  ORDER BY `id` DESC LIMIT ' . $per . ' OFFSET ' . $off
             );
-            $st->execute($args);
+            $st->execute($listArgs);
             $rows = $st->fetchAll();
             return array('items' => (is_array($rows) ? $rows : array()), 'total' => $total);
         } catch (\Exception $e) {
             return array('items' => array(), 'total' => 0);
+        }
+    }
+
+    /** 管理员账号数量（防止把自己或最后一个管理员降级导致自锁）★ v1.9.4 */
+    public static function countAdmins()
+    {
+        if (!self::ensureTables()) { return 0; }
+        try {
+            $st = DB::pdo()->prepare('SELECT COUNT(*) AS n FROM `' . self::T_USER . '` WHERE `email`=:e');
+            $st->execute(array(':e' => self::ADMIN_TAG));
+            $r = $st->fetch();
+            return $r ? (int) $r['n'] : 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 后台改用户资料：用户名 / 邮箱 / 管理员标记 ★ v1.9.4
+     * 返回 '' 表示成功，否则返回中文错误原因。
+     * 管理员身份沿用既有设计（写在 email 字段的 ADMIN_TAG），此处统一收口，
+     * 并加了防自锁：不允许取消当前登录账号、也不允许把最后一个管理员降级。
+     */
+    public static function updateUser($id, $username, $email, $isAdmin = null)
+    {
+        if (!self::ensureTables()) { return '数据表不可用'; }
+        $id  = (int) $id;
+        $row = self::findById($id);
+        if (!$row) { return '用户不存在'; }
+
+        $sets = array();
+        $args = array();
+
+        $username = trim((string) $username);
+        if ($username !== '' && $username !== (string) $row['username']) {
+            if (!self::validUsername($username)) { return '用户名不合法（长度或字符不符合要求）'; }
+            if (self::findByUsername($username)) { return '该用户名已被占用'; }
+            $sets[] = '`username`=:u';
+            $args[':u'] = $username;
+        }
+
+        $tagged = ((string) $row['email'] === self::ADMIN_TAG);
+
+        if ($isAdmin === true && !$tagged) {
+            $sets[] = '`email`=:e';
+            $args[':e'] = self::ADMIN_TAG;
+        } elseif ($isAdmin === false && $tagged) {
+            if ($id === self::uid()) { return '不能取消当前登录账号的管理员身份'; }
+            if (self::countAdmins() <= 1) { return '至少需要保留一个管理员账号'; }
+            $sets[] = '`email`=:e';
+            $args[':e'] = '';
+        } else {
+            $email = trim((string) $email);
+            if ($email !== '' && !$tagged && $email !== (string) $row['email']) {
+                if ($email === self::ADMIN_TAG) { return '该邮箱为系统保留值'; }
+                if (!self::validEmail($email)) { return '邮箱格式不正确'; }
+                $sets[] = '`email`=:e';
+                $args[':e'] = $email;
+            }
+        }
+
+        if (!$sets) { return ''; }
+        $args[':id'] = $id;
+        try {
+            $st = DB::pdo()->prepare('UPDATE `' . self::T_USER . '` SET ' . implode(', ', $sets) . ' WHERE `id`=:id');
+            $st->execute($args);
+            return '';
+        } catch (\Exception $e) {
+            error_log('[User::updateUser] ' . $e->getMessage());
+            return '数据库写入失败（用户名可能已被占用）';
         }
     }
 

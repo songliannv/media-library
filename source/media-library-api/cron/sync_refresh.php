@@ -19,6 +19,8 @@ require_once __DIR__ . '/../core/StaticGen.php';
 require_once __DIR__ . '/../adapters/Adapter.php';
 require_once __DIR__ . '/../adapters/Tmdb.php';
 require_once __DIR__ . '/../adapters/Rawg.php';
+/* ★ v1.9.4 fix：漏了红果短剧 —— 命令行跑「刷新」时会 Fatal error（抽象方法未实现） */
+require_once __DIR__ . '/../adapters/HongguoDuanju.php';
 
 use Core\Config;
 use Core\DB;

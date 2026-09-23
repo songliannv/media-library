@@ -239,7 +239,8 @@ if (!function_exists('mlinst_tables')) {
 if (!function_exists('mlinst_default_adapters')) {
     function mlinst_default_adapters()
     {
-        return array('tmdb', 'rawg');
+        /* ★ v1.9.4：默认带上红果短剧（免 Key，装上就能用） */
+        return array('tmdb', 'rawg', 'hongguoduanju');
     }
 }
 
@@ -299,9 +300,9 @@ if (!function_exists('mlinst_config_content')) {
         $s .= $t . "    'api_key'   => " . mlinst_q($rawgKey) . ",\n";
         $s .= $t . "    'base'      => 'https://rawg.io/api',\n";
         $s .= $t . "],\n\n";
-        $s .= $t . "// 红果短剧（国产短剧） https://www.hongguoduanju.com\n";
+        $s .= $t . "// 红果短剧（国产短剧） https://orz.icicic.icu\n";
         $s .= $t . "'hongguoduanju' => [\n";
-        $s .= $t . "    'base'      => 'https://www.hongguoduanju.com',\n";
+        $s .= $t . "    'base'      => 'https://orz.icicic.icu/api/api.php',\n";
         $s .= $t . "],\n\n";
         $s .= $t . "// 启用的数据源适配器\n";
         $s .= $t . "'adapters' => [" . mlinst_q($adapters[0])
@@ -535,7 +536,9 @@ if (!function_exists('mlinst_normalize')) {
         if (isset($in['adapters']) && is_array($in['adapters'])) {
             foreach ($in['adapters'] as $a) {
                 $a = strtolower(trim((string) $a));
-                if (in_array($a, array('tmdb', 'rawg'), true) && !in_array($a, $ads, true)) {
+                /* ★ v1.9.4：白名单补上 hongguoduanju —— 原先写死 tmdb/rawg，
+                   安装时勾了红果短剧也会被静默丢弃 */
+                if (in_array($a, array('tmdb', 'rawg', 'hongguoduanju'), true) && !in_array($a, $ads, true)) {
                     $ads[] = $a;
                 }
             }

@@ -17,7 +17,7 @@
  */
 define('ML_APP', true);
 define('ML_ROOT', __DIR__);
-define('ML_APP_VERSION', '1.9.0');
+define('ML_APP_VERSION', '1.9.4');
 
 require_once __DIR__ . '/core/Guard.php';      // ← 必须最早加载
 require_once __DIR__ . '/core/DB.php';
@@ -34,6 +34,8 @@ require_once __DIR__ . '/core/StaticGen.php';
 require_once __DIR__ . '/adapters/Adapter.php';
 require_once __DIR__ . '/adapters/Tmdb.php';
 require_once __DIR__ . '/adapters/Rawg.php';
+/* ★ v1.9.4 fix：漏了红果短剧 —— 启用该源后访问 /api/v1/trending 会因类不存在直接 500 */
+require_once __DIR__ . '/adapters/HongguoDuanju.php';
 require_once __DIR__ . '/api/tmdb_proxy.php';
 require_once __DIR__ . '/api/unified.php';
 use Core\Config;  // ★ v1.6.5：index.php 全局命名空间需显式引入

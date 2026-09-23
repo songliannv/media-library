@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS media_items (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   source        VARCHAR(32)  NOT NULL DEFAULT '' COMMENT 'tmdb / rawg / hongguoduanju / manual',
   source_id     VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '外部源 ID',
-  type          VARCHAR(32)  NOT NULL DEFAULT '' COMMENT 'short / movie / tv / anime / variety / game / person',
+  type          VARCHAR(32)  NOT NULL DEFAULT '' COMMENT 'short / movie / tv / anime / variety / game / book / music / other / person',
   title         VARCHAR(512) NOT NULL DEFAULT '',
   original_title VARCHAR(512) NOT NULL DEFAULT '',
   year          SMALLINT     DEFAULT NULL,

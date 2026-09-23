@@ -15,6 +15,10 @@ require_once __DIR__ . '/StaticGen.php';   // 生成静态页需要 Views，故 
 require_once __DIR__ . '/../adapters/Adapter.php';
 require_once __DIR__ . '/../adapters/Tmdb.php';
 require_once __DIR__ . '/../adapters/Rawg.php';
+/* ★ v1.9.4 fix：本文件用 require_once 手动加载适配器（没有 autoloader），
+   原先漏了红果短剧 —— 结果 makeAdapter() 里 class_exists 为 false，
+   勾选了「红果短剧」也永远采不到数据，且不报错（静默跳过）。 */
+require_once __DIR__ . '/../adapters/HongguoDuanju.php';
 
 use Core\CacheStore;
 
@@ -235,9 +239,14 @@ class Sync
                 $out[] = array('path' => '/games?ordering=-rating', 'label' => '评分人气最高', 'kind' => 'popular', 'page' => 1);
             }
         } elseif ($source === 'hongguoduanju') {
-            $out[] = array('path' => '/calendar', 'label' => '当日在播（当季最热）', 'kind' => 'hot', 'page' => 1);
+            /* ★ v1.9.4 fix：这里原先是 Bangumi 的 /calendar 与 /search/subjects，
+               与现在的红果短剧代理 API（?act=…）完全不匹配，采集必然拿不到数据。
+               端点须与 adapters/HongguoDuanju.php 的 trendingFetch() 对得上。 */
+            if ($hot) {
+                $out[] = array('path' => '?act=recommend', 'label' => '推荐短剧（最热）', 'kind' => 'hot', 'page' => 1);
+            }
             if ($pop) {
-                $out[] = array('path' => '/search/subjects?type=2&sort=rank', 'label' => '动画排行榜（人气最高）', 'kind' => 'popular', 'page' => 1);
+                $out[] = array('path' => '?act=rank', 'label' => '排行短剧（人气最高）', 'kind' => 'popular', 'page' => 1);
             }
         }
         return $out;

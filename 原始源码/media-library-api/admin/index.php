@@ -4,7 +4,7 @@
  * 通过 /api/v1/admin/* 与后端交互。★ v1.7.0 起不再用「管理令牌」卡自己 ——
  * 改为「账号 + 密码」登录（管理员账号是安装时创建的第一个账号），
  * 登录态存 $_SESSION，接口侧由 Api::requireAdmin() 校验同一会话。
- * 条目管理按 6 大分类（短剧/电影/电视剧/动漫/综艺/游戏）建栏目，每类可新增/编辑/删除。
+ * 条目管理按分类（短剧/电影/电视剧/动漫/综艺/游戏/书籍/音乐/其他）建栏目，每类可新增/编辑/删除。
  * 网盘类型来自 config/pan_types.php（可随升级包扩展），此处不写死。
  *
  * ★ v1.8.6 修复「登录点不动 / 提交后跳回登录页」：
@@ -683,6 +683,9 @@ table{min-width:680px}
         <button class="cat" data-cat="anime">动漫</button>
         <button class="cat" data-cat="variety">综艺</button>
         <button class="cat" data-cat="game">游戏</button>
+        <button class="cat" data-cat="book">书籍</button>
+        <button class="cat" data-cat="music">音乐</button>
+        <button class="cat" data-cat="other">其他</button>
       </div>
       <div class="toolbar">
         <input type="text" id="q" placeholder="搜索标题…" onkeydown="if(event.key==='Enter')loadItems()">
@@ -791,6 +794,7 @@ table{min-width:680px}
           <option value="game">游戏</option>
           <option value="book">书籍</option>
           <option value="music">音乐</option>
+          <option value="other">其他</option>
         </select>
       </div>
       <div class="form-row">
@@ -2567,10 +2571,11 @@ async function loadUsers(page = 1) {
     users.forEach(u => {
       const statusClass = u.status == 1 ? 'ok' : 'bad';
       const statusText = u.status == 1 ? '正常' : '禁用';
+      const isAdm = String(u.is_admin) === '1';
       h += '<tr>'
         + '<td>' + esc(u.username) + '</td>'
-        + '<td>' + esc(u.email || '-') + '</td>'
-        + '<td>' + (u.is_admin ? '管理员' : '普通用户') + '</td>'
+        + '<td>' + (isAdm ? '-' : esc(u.email || '-')) + '</td>'
+        + '<td>' + (isAdm ? '管理员' : '普通用户') + '</td>'
         + '<td><span class="pill ' + statusClass + '">' + statusText + '</span></td>'
         + '<td>' + (u.created_at || '-') + '</td>'
         + '<td>'
@@ -2581,9 +2586,10 @@ async function loadUsers(page = 1) {
     });
     h += '</tbody></table>';
     box.innerHTML = h;
-    const total = meta.total || 0;
-    const perPage = meta.per_page || 20;
-    const totalPages = Math.ceil(total / perPage);
+    /* ★ v1.9.4 fix：这里原来写成 meta.total / meta.per_page，而 meta 根本不存在，
+       且与上面的 const total 重复声明 —— 重复 const 会让整段 script 解析失败，
+       直接导致后台所有按钮失效。每页条数以接口为准（30）。 */
+    const totalPages = Math.ceil((d.data.total || 0) / 30);
     if (totalPages > 1) {
       let pH = '<nav class="pagination">';
       if (page > 1) pH += '<button onclick="loadUsers(' + (page - 1) + ')">上一页</button>';
@@ -2603,14 +2609,22 @@ async function toggleUserStatus(id, status) {
 async function editUser(id) {
   const d = await api('/api/v1/admin/user_list');
   if (!d.success) { alert('加载失败'); return; }
-  const user = (d.data.users || []).find(u => u.id == id);
+  /* ★ v1.9.4 fix：接口返回的字段是 items（原来写成 users，永远找不到人 →「用户不存在」） */
+  const user = (d.data.items || []).find(u => u.id == id);
   if (!user) { alert('用户不存在'); return; }
+  const isAdm = String(user.is_admin) === '1';
   const newUsername = prompt('用户名:', user.username);
   if (newUsername === null) return;
-  const newEmail = prompt('邮箱:', user.email || '');
-  if (newEmail === null) return;
-  const isAdmin = confirm('设为管理员？');
-  const saveD = await api('/api/v1/admin/user_save', 'POST', { id, username: newUsername, email: newEmail, is_admin: isAdmin ? 1 : 0 });
+  /* 管理员的 email 字段存的是系统标记，不当作真实邮箱来改 */
+  let newEmail = '';
+  if (!isAdm) {
+    newEmail = prompt('邮箱:', user.email || '');
+    if (newEmail === null) return;
+  }
+  const isAdmin = confirm('设为管理员？\n（当前：' + (isAdm ? '管理员' : '普通用户') + '）');
+  const payload = { id: id, username: newUsername, is_admin: isAdmin ? 1 : 0 };
+  if (!isAdm) { payload.email = newEmail; }
+  const saveD = await api('/api/v1/admin/user_save', 'POST', payload);
   if (!saveD.success) { alert(saveD.error || '保存失败'); return; }
   alert('用户已更新');
   loadUsers();

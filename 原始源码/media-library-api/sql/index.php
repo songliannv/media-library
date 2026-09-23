@@ -19,7 +19,7 @@ echo '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
    . '<meta name="viewport" content="width=device-width,initial-scale=1">'
    . '<title>404 Not Found</title></head>'
    . '<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;'
-   . "font-family:-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;background:#f8fafc;color:#64748b">"
+   . "font-family:-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;background:#f8fafc;color:#64748b\">"
    . '<div style="text-align:center"><div style="font-size:58px;font-weight:700;color:#cbd5e1">404</div>'
    . '<div style="margin-top:6px;font-size:14px">Not Found</div></div></body></html>';
 exit;

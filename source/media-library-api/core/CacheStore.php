@@ -443,7 +443,10 @@ class CacheStore
         }
         $where[] = '(poster = \'\' OR poster IS NULL OR backdrop = \'\' OR backdrop IS NULL)';
 
-        $sql = 'SELECT id, source, source_id, type FROM media_items';
+        /* ★ v1.9.4 fix：这里必须把 poster / backdrop 一起查出来，
+           否则下面判断「该字段是否为空」时永远拿不到值（未定义索引），
+           既会刷 PHP Notice，也无法判断是否真的需要补图。 */
+        $sql = 'SELECT id, source, source_id, type, poster, backdrop FROM media_items';
         if (!empty($where)) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }

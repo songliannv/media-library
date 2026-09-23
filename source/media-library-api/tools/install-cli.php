@@ -307,7 +307,7 @@ $dbCfg = array(
     'pass'   => $in['pass'],
 );
 
-$adapters = array('tmdb', 'rawg');
+$adapters = array('tmdb', 'rawg', 'hongguoduanju');
 $panList  = array('夸克', '迅雷', '光鸭', '百度', 'UC');
 
 /* 第 4 个参数（后台令牌）v1.7.0 起已废弃，传空 */

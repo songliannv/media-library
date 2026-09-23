@@ -61,7 +61,8 @@ return [
     'rawg' => [
         'api_key'   => 'YOUR_RAWG_API_KEY',
         'base'      => 'https://api.rawg.io/api',
-    ]
+    ],
+
     // 红果短剧（国产短剧） https://orz.icicic.icu
     'hongguoduanju' => [
         'base'      => 'https://orz.icicic.icu/api/api.php',

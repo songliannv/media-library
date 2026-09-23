@@ -286,7 +286,7 @@ $files = [
     '/core/CacheStore.php', '/core/Categories.php', '/core/Views.php',
     '/core/StaticGen.php', '/core/LinkChecker.php', '/core/InstallGuard.php', '/core/Guard.php',
     '/api/tmdb_proxy.php', '/api/unified.php',
-    '/adapters/Adapter.php', '/adapters/Tmdb.php', '/adapters/Rawg.php', '',
+    '/adapters/Adapter.php', '/adapters/Tmdb.php', '/adapters/Rawg.php', '/adapters/HongguoDuanju.php',
     '/admin/index.php', '/config/pan_types.php',
 ];
 $missing = [];
@@ -579,7 +579,7 @@ if (!$NO_HTTP) {
     $sources = [
         ['TMDB',     'https://api.themoviedb.org/3/configuration?api_key=' . urlencode((string) ((isset($CFG['tmdb']['api_key']) ? $CFG['tmdb']['api_key'] : ''))), ($tmdbKey === '' || strpos($tmdbKey, 'YOUR_') === 0)],
         ['RAWG',     'https://api.rawg.io/api/games?page_size=1&key=' . urlencode((string) ((isset($CFG['rawg']['api_key']) ? $CFG['rawg']['api_key'] : ''))), ($rawgKey === '' || strpos($rawgKey, 'YOUR_') === 0)],
-        ['红果短剧', 'https://www.hongguoduanju.com', false],
+        ['红果短剧', 'https://orz.icicic.icu', false],
         ['图片 CDN', 'https://image.tmdb.org/t/p/w92/wwemzKWzjKYJFfCeiBssw6xDBc3.jpg', false],
     ];
     foreach ($sources as $src) {
