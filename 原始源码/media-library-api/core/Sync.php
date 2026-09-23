@@ -67,14 +67,16 @@ class Sync
             ),
             'hongguoduanju' => array(
                 'label'    => '红果短剧（国产短剧）',
-                'docs'     => 'https://www.hongguoduanju.com',
-                'quota'    => '基础接口免 Key；官方要求自带 User-Agent，建议请求间隔 ≥1 秒',
-                'page_size'=> 40,
-                'delay_ms' => 1200,
+                'docs'     => 'https://orz.icicic.icu',
+                'quota'    => '代理 API，需间隔10秒/请求防封',
+                'page_size'=> 50,
+                'delay_ms' => 10000,
                 'need_key' => false,
-                'hot'      => '/calendar —— 当日在播（当季最热）',
-                'popular'  => '/calendar（该源只提供在播这一个热门口径）',
-                'note'     => '返回按星期分组的在播列表，会自动摊平后按条数上限截断',
+                'hot'      => '?act=recommend —— 推荐短剧',
+                'popular'  => '?act=rank —— 排行短剧',
+                'new'      => '?act=new —— 最新短剧',
+                'search'   => '?act=search&keyword=xxx —— 搜索短剧',
+                'note'     => '返回 book_id/title/cover/intro/type/episode_cnt/play_cnt 等元数据',
             ),
         );
     }

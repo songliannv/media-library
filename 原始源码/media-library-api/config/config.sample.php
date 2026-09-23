@@ -62,10 +62,9 @@ return [
         'api_key'   => 'YOUR_RAWG_API_KEY',
         'base'      => 'https://api.rawg.io/api',
     ]
-    // 红果短剧（国产短剧） https://www.hongguoduanju.com
+    // 红果短剧（国产短剧） https://orz.icicic.icu
     'hongguoduanju' => [
-        'base'      => 'https://www.hongguoduanju.com',
-        'image_base'=> 'https://www.hongguoduanju.com',
+        'base'      => 'https://orz.icicic.icu/api/api.php',
     ],
 
     // 启用的数据源适配器（新增源只需在此加一项并在 adapters/ 加对应类）
