@@ -17,7 +17,7 @@
  */
 define('ML_APP', true);
 define('ML_ROOT', __DIR__);
-define('ML_APP_VERSION', '1.9.2');
+define('ML_APP_VERSION', '1.9.3');
 
 require_once __DIR__ . '/core/Guard.php';      // ← 必须最早加载
 require_once __DIR__ . '/core/DB.php';
