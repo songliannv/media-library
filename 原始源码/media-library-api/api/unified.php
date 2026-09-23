@@ -1163,18 +1163,7 @@ class Unified
         $body = json_decode((string) file_get_contents('php://input'), true);
         $body = is_array($body) ? $body : [];
         return array_merge($qs, $body);
-
-
-    // ★ v1.9.0: 自动刮削 - 补全空图片
-    public static function handleAutoScrape(array $body): array
-    {
-        $type = (string) ($body['type'] ?? '');
-        $limit = max(10, min(500, (int) ($body['limit'] ?? 50)));
-        $count = self::autoScrapeImages($type, $limit);
-        return ['scraped' => $count];
     }
-    }
-
 
     // ★ v1.9.0: 自动刮削 - 补全空图片
     public static function handleAutoScrape(array $body): array
