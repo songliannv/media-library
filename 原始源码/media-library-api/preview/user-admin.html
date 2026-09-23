@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台 · 资源请求（界面预览）</title>
+<style>
+/* ===== 以下为正式样式（admin/index.php 内的 CSS），预览页直接复用；改样式请改后台源码 ===== */
+:root{--bg:#f5f6fa;--card:#fff;--line:#eceef3;--pri:#5b5bd6;--pri2:#8b5cf6;--txt:#1b1f2a;--mut:#9aa1b1;
+      --ok:#0f9d63;--warn:#d97706;--dead:#e5484d;--shadow:0 6px 22px rgba(27,31,42,.06);--pad:18px}
+:root[data-theme=dark]{--bg:#0f1420;--card:#171f31;--line:#28324a;--txt:#e6eaf3;--mut:#94a0b8;--shadow:0 6px 22px rgba(0,0,0,.35)}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.topbar{position:sticky;top:0;z-index:30;background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;box-shadow:0 2px 20px rgba(91,91,214,.30)}
+.topbar .in{max-width:1180px;margin:0 auto;padding:13px 18px;display:flex;align-items:center;gap:16px}
+.brand{font-weight:800;font-size:18px;white-space:nowrap;display:flex;align-items:center;gap:9px;color:#fff}
+.brand .logo{width:26px;height:26px;border-radius:7px;background:#fff;color:var(--pri);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex:0 0 26px}
+.brand .slogan{font-weight:400;font-size:12.5px;opacity:.86;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search{flex:1;display:flex;gap:8px;max-width:520px;margin-left:auto}
+.search input{flex:1;padding:9px 14px;border:0;border-radius:10px;font-size:14px;outline:none;background:rgba(255,255,255,.94);color:#1b1f2a}
+.search button{padding:9px 18px;border:0;border-radius:10px;background:rgba(255,255,255,.20);color:#fff;cursor:pointer;font-size:14px}
+.uarea{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.uarea a,.uarea span{color:#fff;font-size:13px;padding:7px 12px;border-radius:9px;background:rgba(255,255,255,.12)}
+.uarea .who{background:rgba(255,255,255,.20);font-weight:600}
+.mainnav{background:rgba(0,0,0,.13);border-top:1px solid rgba(255,255,255,.10)}
+.mainnav .navin{max-width:1180px;margin:0 auto;padding:0 18px;display:flex;gap:4px;overflow-x:auto}
+.mainnav a{color:#fff;opacity:.9;font-size:13.5px;padding:9px 13px;border-radius:8px;white-space:nowrap}
+.mainnav a.on{background:rgba(255,255,255,.20);opacity:1;font-weight:600}
+.u-wrap{max-width:860px;margin:0 auto;padding:22px 18px 40px}
+.u-head{margin:0 0 14px}
+.u-head h1{margin:0 0 5px;font-size:22px;letter-spacing:.3px}
+.u-head p{margin:0;color:var(--mut);font-size:13.5px;line-height:1.8}
+.u-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.u-card.u-narrow{max-width:520px;margin-left:auto;margin-right:auto}
+.u-field{margin-bottom:14px}
+.u-field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.u-in{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;outline:none;font-family:inherit;background:var(--card);color:var(--txt)}
+.u-in:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(91,91,214,.13)}
+textarea.u-in{min-height:80px;resize:vertical}
+select.u-in{appearance:none;background-image:linear-gradient(45deg,transparent 50%,#9aa1b1 50%),linear-gradient(135deg,#9aa1b1 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
+.u-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tip{color:var(--mut);font-size:12px;margin-top:5px;line-height:1.7}
+.u-btn{display:inline-block;padding:11px 22px;border:0;border-radius:10px;background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;font-size:14.5px;font-weight:600;cursor:pointer;box-shadow:0 8px 20px rgba(91,91,214,.28)}
+.u-btn.ghost{background:transparent;color:var(--pri);border:1px solid var(--line);box-shadow:none;font-weight:500}
+.u-alt{color:var(--mut);font-size:13px;margin:14px 0 0;text-align:center}
+.u-alt a{color:var(--pri);font-weight:600}
+.u-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.u-cap{display:flex;gap:10px;align-items:center}
+.u-cap .q{flex:0 0 auto;padding:10px 16px;border-radius:9px;background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;font-weight:700;letter-spacing:1px;font-size:15px}
+.u-flash{padding:11px 14px;border-radius:10px;font-size:13.5px;margin-bottom:14px;border:1px solid transparent;line-height:1.75}
+.u-flash.ok{background:#e8f8f0;color:#0b7a4d;border-color:#bde9d5}
+.u-flash.err{background:#fdecec;color:#b3261e;border-color:#f6c9c6}
+.u-flash.info{background:#eaf1fe;color:#1d4ed8;border-color:#c7d9fb}
+.u-stats{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.u-pill{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--mut)}
+.u-pill b{color:var(--txt)}
+.u-lock{text-align:center;padding:26px 16px}
+.u-lock .ico{font-size:34px;margin-bottom:8px}
+.u-lock h3{margin:0 0 6px;font-size:17px}
+.u-lock p{margin:0 0 16px;color:var(--mut);font-size:13.5px;line-height:1.8}
+.u-list{display:flex;flex-direction:column;gap:10px}
+.u-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.u-item .t{font-weight:600;font-size:14.5px;margin-bottom:5px}
+.u-meta{color:var(--mut);font-size:12.5px;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.u-note{font-size:13px;color:var(--txt);opacity:.86;line-height:1.75;margin-bottom:7px}
+.u-reply{background:#f7f8fc;border-left:3px solid var(--pri);border-radius:0 8px 8px 0;padding:9px 12px;font-size:13px;line-height:1.75;margin-bottom:7px}
+.u-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.u-badge.pending{background:#fdf3e0;color:#b26a00}
+.u-badge.found{background:#e8f8f0;color:#0b7a4d}
+.u-badge.notfound{background:#eef0f5;color:#5b6474}
+.u-badge.replied{background:#eaf1fe;color:#1d4ed8}
+.u-badge.closed{background:#eceff4;color:#6b7484}
+.u-empty{text-align:center;color:var(--mut);font-size:13.5px;padding:26px 10px}
+.u-ops{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.u-mini{padding:6px 13px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--mut);font-size:12.5px;cursor:pointer;font-family:inherit}
+.u-pager{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.u-pager a,.u-pager span{min-width:34px;text-align:center;padding:7px 11px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--mut);font-size:13px}
+.u-pager .c{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;border-color:transparent;font-weight:600}
+.foot{background:#131a29;color:#94a0b8;margin-top:40px;padding:26px 18px}
+.foot .fin{max-width:1180px;margin:0 auto;font-size:12.5px;line-height:2}
+.foot .fbrand{color:#fff;font-weight:700}
+.mock{text-align:center;color:var(--mut);font-size:12px;padding:6px 0 30px}
+@media (max-width:680px){.uarea .who{display:none}.u-row2{grid-template-columns:1fr}.u-wrap{--pad:14px}}
+
+:root{--abg:#f3f4f9;--acard:#fff;--aline:#e9ebf2;--atxt:#1b1f2a;--amut:#9aa1b1;--apri:#5b5bd6;--apri2:#8b5cf6}
+:root[data-theme=dark]{--abg:#0f1420;--acard:#171f31;--aline:#28324a;--atxt:#e6eaf3;--amut:#94a0b8}
+body{background:var(--abg);color:var(--atxt)}
+.a-head{background:linear-gradient(120deg,var(--apri),var(--apri2));color:#fff;padding:14px 22px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 18px rgba(91,91,214,.28)}
+.a-head h1{margin:0;font-size:16px;font-weight:800;letter-spacing:.3px}
+.a-head .sp{margin-left:auto;font-size:12.5px;opacity:.9}
+.tabs{display:flex;gap:5px;background:var(--acard);border-bottom:1px solid var(--aline);padding:9px 18px;overflow-x:auto}
+.tab{padding:8px 15px;border-radius:9px;font-size:13.5px;color:var(--amut);white-space:nowrap;cursor:pointer}
+.tab.on{background:linear-gradient(120deg,var(--apri),var(--apri2));color:#fff;font-weight:600}
+.a-wrap{max-width:1180px;margin:18px auto;padding:0 18px 44px}
+.subtabs{display:flex;gap:6px;background:var(--acard);border:1px solid var(--aline);border-radius:12px;padding:6px;margin-bottom:14px;overflow-x:auto}
+.stab{padding:8px 15px;border-radius:9px;font-size:13.5px;color:var(--amut);white-space:nowrap;cursor:pointer}
+.stab.on{background:linear-gradient(120deg,var(--apri),var(--apri2));color:#fff;font-weight:600}
+.acard{background:var(--acard);border:1px solid var(--aline);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:0 6px 22px rgba(27,31,42,.05)}
+.reqbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.rpill{background:var(--acard);border:1px solid var(--aline);border-radius:20px;padding:6px 14px;font-size:12.5px;color:var(--amut)}
+.rpill b{color:var(--atxt)}
+.qbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.qbar input,.qbar select{padding:9px 12px;border:1px solid var(--aline);border-radius:9px;font-size:13.5px;background:var(--acard);color:var(--atxt);outline:none;font-family:inherit}
+.qbar input{flex:1;min-width:170px}
+.qbar button{padding:9px 18px;border:0;border-radius:9px;background:linear-gradient(120deg,var(--apri),var(--apri2));color:#fff;font-size:13.5px;font-weight:600;cursor:pointer}
+.req-row{display:grid;grid-template-columns:52px 1fr 150px 130px 190px;gap:12px;align-items:center;padding:12px 6px;border-bottom:1px solid var(--aline);font-size:13.5px}
+.req-row.hd{color:var(--amut);font-size:12.5px;font-weight:600;border-bottom:1px solid var(--aline);padding-bottom:9px}
+.req-row .t{font-weight:600}
+.req-row .sub{color:var(--amut);font-size:12.5px;margin-top:3px;line-height:1.7}
+.ubadge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.ubadge.pending{background:#fdf3e0;color:#b26a00}
+.ubadge.found{background:#e8f8f0;color:#0b7a4d}
+.ubadge.notfound{background:#eef0f5;color:#5b6474}
+.ubadge.replied{background:#eaf1fe;color:#1d4ed8}
+.ubadge.closed{background:#eceff4;color:#6b7484}
+.ubadge.u0{background:#eef0f5;color:#5b6474}
+.ubadge.u1{background:#e8f8f0;color:#0b7a4d}
+.ubadge.u2{background:#fdf3e0;color:#b26a00}
+.req-row .ops{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.ops button{padding:6px 12px;border:1px solid var(--aline);border-radius:8px;background:transparent;color:var(--amut);font-size:12.5px;cursor:pointer;font-family:inherit}
+.ops button.pri{background:linear-gradient(120deg,var(--apri),var(--apri2));color:#fff;border-color:transparent;font-weight:600}
+.pager{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.pager span,.pager a{min-width:34px;text-align:center;padding:7px 11px;border:1px solid var(--aline);border-radius:9px;background:var(--acard);color:var(--amut);font-size:13px}
+.pager .c{background:linear-gradient(120deg,var(--apri),var(--apri2));color:#fff;border-color:transparent;font-weight:600}
+.a-note{color:var(--amut);font-size:12.5px;line-height:1.9}
+.a-note b{color:var(--atxt)}
+.a-note code{background:var(--acard);border:1px solid var(--aline);border-radius:5px;padding:1px 5px}
+@media(max-width:768px){
+  .req-row{grid-template-columns:1fr;gap:6px;padding:14px 6px}
+  .req-row.hd{display:none}
+  .req-row .ops{grid-template-columns:1fr;justify-content:flex-start}
+  .a-wrap{padding:0 12px 44px}
+}
+</style>
+</head>
+<body>
+<div class="a-head"><h1>媒资资料库 · 后台管理</h1><span class="sp">管理员 admin　·　v1.6.2</span></div><div class="tabs"><span class="tab">概览</span><span class="tab">条目管理</span><span class="tab on">资源请求</span><span class="tab">站点设置</span><span class="tab">同步采集</span><span class="tab">安全防护</span><span class="tab">接口与密钥</span><span class="tab">日志</span></div><div class="a-wrap"><div class="reqbar"><span class="rpill">请求总数 <b>128</b></span><span class="rpill">待处理 <b>36</b></span><span class="rpill">已找到 <b>62</b></span><span class="rpill">暂未找到 <b>14</b></span><span class="rpill">已回复 <b>11</b></span><span class="rpill">已关闭 <b>5</b></span><span class="rpill">注册用户 <b>74</b></span><span class="rpill">待审核 <b>3</b></span></div><div class="subtabs"><span class="stab on">请求列表</span><span class="stab">注册用户</span></div><div class="qbar"><input type="text" value="三体" placeholder="搜索标题 / 用户 / 内容"><select><option>全部状态</option><option>待处理</option><option>已找到</option></select><button type="button">查询</button><button type="button" style="background:transparent;color:var(--amut);border:1px solid var(--aline)">刷新</button></div><div class="acard"><div class="req-row hd"><div>ID</div><div>请求内容</div><div>状态</div><div>提交时间</div><div style="text-align:right">操作</div></div><div class="req-row"><div>#128</div><div><div class="t">三体 第二季</div><div class="sub">剧集 · 2024 · 由 影迷小李 提交 · 要腾讯视频版 4K</div></div><div><span class="ubadge pending">待处理</span></div><div style="color:var(--amut);font-size:12.5px">09-22 16:40</div><div class="ops"><button class="pri" type="button">标记已找到</button><button type="button">回复</button><button type="button">关闭</button></div></div><div class="req-row"><div>#127</div><div><div class="t">沙丘 2</div><div class="sub">电影 · 2024 · 由 影迷小李 提交</div></div><div><span class="ubadge found">已找到</span></div><div style="color:var(--amut);font-size:12.5px">09-22 11:05</div><div class="ops"><button type="button">查看条目</button><button type="button">回复</button><button type="button">删除</button></div></div><div class="req-row"><div>#126</div><div><div class="t">咒术回战 第二季</div><div class="sub">动漫 · 2023 · 由 老王 提交</div></div><div><span class="ubadge notfound">暂未找到</span></div><div style="color:var(--amut);font-size:12.5px">09-21 19:48</div><div class="ops"><button type="button">回复</button><button type="button">重开</button><button type="button">删除</button></div></div><div class="req-row"><div>#125</div><div><div class="t">狂飙</div><div class="sub">剧集 · 2023 · 由 阿强 提交</div></div><div><span class="ubadge replied">已回复</span></div><div style="color:var(--amut);font-size:12.5px">09-21 15:02</div><div class="ops"><button type="button">回复</button><button type="button">关闭</button><button type="button">删除</button></div></div><div class="req-row"><div>#124</div><div><div class="t">漫长的季节</div><div class="sub">剧集 · 2023 · 由 匿名 提交</div></div><div><span class="ubadge closed">已关闭</span></div><div style="color:var(--amut);font-size:12.5px">09-19 09:20</div><div class="ops"><button type="button">重开</button><button type="button">删除</button></div></div><div class="pager"><span>上一页</span><span class="c">1</span><a href="#">2</a><a href="#">3</a><a href="#">下一页</a></div></div><div class="acard"><div style="font-size:14px;font-weight:700;margin-bottom:10px">注册用户（另一个二级页签）</div><div class="req-row hd"><div>ID</div><div>用户名 / 邮箱</div><div>状态</div><div>提交数</div><div style="text-align:right">操作</div></div><div class="req-row"><div>#7</div><div><div class="t">影迷小李</div><div class="sub">fan@example.com</div></div><div><span class="ubadge u1">正常</span></div><div style="color:var(--amut);font-size:12.5px">3 条请求</div><div class="ops"><button type="button">重置密码</button><button type="button">禁用</button><button type="button">删除</button></div></div><div class="req-row"><div>#6</div><div><div class="t">阿强</div><div class="sub">—</div></div><div><span class="ubadge u2">待审核</span></div><div style="color:var(--amut);font-size:12.5px">1 条请求</div><div class="ops"><button class="pri" type="button">通过</button><button type="button">禁用</button><button type="button">删除</button></div></div><div class="req-row"><div>#5</div><div><div class="t">老王</div><div class="sub">wang@example.com</div></div><div><span class="ubadge u0">已禁用</span></div><div style="color:var(--amut);font-size:12.5px">2 条请求</div><div class="ops"><button class="pri" type="button">解禁</button><button type="button">重置密码</button><button type="button">删除</button></div></div></div><div class="a-note"><b>数据来源：</b>本页通过后台接口 <code>admin/req_list</code> / <code>admin/user_list</code> 读取 <code>app_requests</code> 与 <code>app_users</code> 两张表，全部走既有的 <code>api()</code> + <code>busy()</code> 封装，无自定义请求逻辑。<br><b>开关与文案：</b>「资源请求」的全部开关（开放注册 / 必须登录才能提交 / 注册审核 / 图形验证 / 允许游客查看 / 公开列表 / 显示联系方式 / 导航入口 / 每日上限 / 最少标题字数 / 页面标题 / 页面简介 / 站长公告）都在 「站点设置 → 资源请求」里改，保存即生效。<br><b>删除用户：</b>只停用账号并保留其历史请求（<code>user_id</code> 置 0），不会连带删掉请求记录。<br><b>自检：</b><code>check.php</code> 第 11 组会报告两张表是否存在 / 缺列情况、用户与请求数量、会话目录可写性，并真实探测 <code>/user/register</code> 与 <code>/request</code> 的 HTTP 状态。</div></div>
+<div class="mock">静态界面预览 · 非真实数据</div>
+<button type="button" onclick="(function(){var d=document.documentElement.getAttribute('data-theme')==='dark';document.documentElement.setAttribute('data-theme',d?'light':'dark');this.textContent=d?'\uD83C\uDF19 \u5207\u5230\u4eae\u8272':'\u2600 \u5207\u5230\u6697\u8272';}).call(this)" style="position:fixed;right:14px;bottom:14px;z-index:999;padding:9px 15px;border-radius:22px;border:0;background:linear-gradient(120deg,#5b5bd6,#8b5cf6);color:#fff;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.25)">🌙 切到亮色 / ☀ 切到暗色</button>
+</body>
+</html>
