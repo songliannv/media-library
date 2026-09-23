@@ -752,8 +752,10 @@ class Unified
 
         // ★ v1.9.0: 自动刮削 - 补全空图片
         if ($action === 'item' && $method === 'POST' && isset($body['auto_scrape'])) {
-            $type = (string) ($body['type'] ?? '');
-            $limit = max(10, min(500, (int) ($body['limit'] ?? 50)));
+            /* ★ v1.9.4 fix：原写法用了 ??（PHP 7.0+），与本项目「最低 PHP 5.6」的约定冲突，
+               5.6 下会 Parse error。改用 isset 三元。 */
+            $type  = (string) (isset($body['type']) ? $body['type'] : '');
+            $limit = max(10, min(500, (int) (isset($body['limit']) ? $body['limit'] : 50)));
             $count = CacheStore::autoScrapeImages($type, $limit);
             Json::ok(['scraped' => $count]);
         }
@@ -1182,12 +1184,7 @@ class Unified
         return array_merge($qs, $body);
     }
 
-    // ★ v1.9.0: 自动刮削 - 补全空图片
-    public static function handleAutoScrape(array $body): array
-    {
-        $type = (string) ($body['type'] ?? '');
-        $limit = max(10, min(500, (int) ($body['limit'] ?? 50)));
-        $count = self::autoScrapeImages($type, $limit);
-        return ['scraped' => $count];
-    }
+    /* ★ v1.9.4：删除 handleAutoScrape() —— 死代码（全项目无任何调用点，
+       真正的自动刮削路由在上面 admin 分支里已内联实现）。
+       且它用了 `: array` 返回类型与 ??（PHP 7.0+），违反本项目「最低 PHP 5.6」约定。 */
 }

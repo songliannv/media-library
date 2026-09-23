@@ -430,8 +430,13 @@ class CacheStore
 
     /**
      * 自动刮削：为 poster 或 backdrop 为空的条目补充图片 URL
+     *
+     * ★ v1.9.4 fix：原来写成 `autoScrapeImages(string $type = '', int $limit = 50): int`，
+     *   标量类型提示 + 返回类型声明都是 PHP 7.0+ 语法，而本项目最低要求 PHP 5.6
+     *   （check.php 里明确写了）。5.6 环境下这行会直接 Parse error，
+     *   导致整个 CacheStore.php 加载失败 → 前台首页 500。去掉类型声明即可。
      */
-    public static function autoScrapeImages(string $type = '', int $limit = 50): int
+    public static function autoScrapeImages($type = '', $limit = 50)
     {
         $pdo = DB::pdo();
 
