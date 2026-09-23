@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>媒资资料库 · 安全防护（界面预览）</title>
+<style>
+  :root{ --bg:#f4f5fa; --card:#fff; --line:#eceef3; --pri:#5b5bd6; --pri2:#8b5cf6; --txt:#1b1f2a; --mut:#9aa1b1;
+         --ok:#0f9d63; --dead:#e5484d; --shadow:0 6px 22px rgba(27,31,42,.06); }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased;padding-bottom:40px}
+  header{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;padding:15px 22px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 18px rgba(91,91,214,.28)}
+  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.3px}
+  header .sub{font-size:12.5px;opacity:.85;margin-left:auto}
+  .wrap{max-width:1200px;margin:20px auto;padding:0 16px}
+  .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .tab{padding:9px 18px;border:1px solid var(--line);background:var(--card);border-radius:22px;cursor:pointer;font-size:14px;color:var(--mut)}
+  .tab.active{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;border-color:transparent;font-weight:600;box-shadow:0 6px 16px rgba(91,91,214,.3)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+  h3{margin:0;font-size:15px}
+  .hint{color:var(--mut);font-size:12px}
+  .ext-note{background:#ecfdf5;color:#065f46;border-radius:9px;padding:11px 13px;margin-top:12px;font-size:13px;line-height:1.75}
+  .sec-row{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--line)}
+  .sec-row:first-child{border-top:0}
+  .sec-bd{flex:0 0 76px}
+  .sec-badge{display:inline-block;font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px;white-space:nowrap}
+  .sec-badge.y{background:#e9f9f1;color:var(--ok)}
+  .sec-badge.n{background:#fff7e6;color:#b45309}
+  .sec-badge.f{background:#feecec;color:var(--dead)}
+  .sec-nm{font-size:13.5px;font-weight:600}
+  .sec-dt{font-size:12.5px;color:var(--mut);margin-top:3px;line-height:1.7;word-break:break-all}
+  .row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  button{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;border:0;border-radius:9px;padding:9px 15px;cursor:pointer;font-size:14px}
+  button.ghost{background:#fff;color:var(--pri);border:1px solid var(--pri)}
+  code{background:#f1f5f9;padding:1px 6px;border-radius:5px;font-family:Consolas,monospace;font-size:12.5px;color:#be123c}
+  .note{text-align:center;color:#94a3b8;font-size:12.5px;margin-top:6px}
+
+/* ===== 以下为 v1.6.1 正式样式（响应式自适应 + 明暗主题）追加 ===== */
+  :root{ --maxw:1200px; --pad:16px; --thbg:#fafbff; --rowhov:#fafbff;
+         --bg:#f4f5fa; --card:#fff; --line:#eceef3; --pri:#5b5bd6; --pri2:#8b5cf6; --txt:#1b1f2a; --mut:#9aa1b1;
+         --ok:#0f9d63; --dead:#e5484d; --shadow:0 6px 22px rgba(27,31,42,.06); }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased}
+  header{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;padding:15px 22px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 18px rgba(91,91,214,.28)}
+  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.3px}
+  header .sub{font-size:12.5px;opacity:.85;margin-left:auto}
+  .wrap{max-width:var(--maxw);margin:20px auto;padding:0 var(--pad)}
+  .token-bar{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:var(--shadow)}
+  .token-bar input{flex:1;min-width:220px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;outline:none}
+  .tabs{display:flex;gap:8px;margin-bottom:16px}
+  .tab{padding:9px 18px;border:1px solid var(--line);background:var(--card);border-radius:22px;cursor:pointer;font-size:14px;color:var(--mut);transition:.15s}
+  .tab:hover{color:var(--pri)}
+  .tab.active{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;border-color:transparent;font-weight:600;box-shadow:0 6px 16px rgba(91,91,214,.3)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .stat{background:linear-gradient(160deg,#f7f7ff,#f1f1fb);border:1px solid var(--line);border-radius:11px;padding:15px}
+  .stat b{font-size:22px;display:block}
+  .stat span{color:var(--mut);font-size:13px}
+  .cats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .cat{padding:7px 16px;border:1px solid var(--line);background:var(--card);border-radius:20px;cursor:pointer;font-size:14px;color:var(--mut);transition:.15s}
+  .cat:hover{color:var(--pri);border-color:var(--pri)}
+  .cat.active{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;border-color:transparent;font-weight:600}
+  .toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .toolbar input,.toolbar select{padding:9px 11px;border:1px solid var(--line);border-radius:9px;outline:none}
+  .toolbar input[type=text]{flex:1;min-width:200px}
+  button{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;border:0;border-radius:9px;padding:9px 15px;cursor:pointer;font-size:14px;transition:.15s}
+  button:hover{filter:brightness(1.06);box-shadow:0 6px 16px rgba(91,91,214,.28)}
+  button.ghost{background:var(--card);color:var(--pri);border:1px solid var(--pri)}
+  button.ghost:hover{background:#f5f5ff}
+  button.danger{background:linear-gradient(120deg,#e5484d,#f0686c)}
+  button.sm{padding:6px 11px;font-size:13px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  th{color:var(--mut);font-weight:600;background:var(--thbg)}
+  tbody tr:hover{background:var(--rowhov)}
+  .thumb{width:46px;height:66px;object-fit:cover;border-radius:7px;background:#eee}
+  .pager{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:12px}
+  .log{font-size:13px;line-height:1.7;white-space:pre-wrap;color:#444;overflow-x:auto;word-break:break-word}
+  .modal{position:fixed;inset:0;background:rgba(27,31,42,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal .box{background:var(--card);border-radius:16px;padding:22px;width:100%;max-width:580px;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+  .modal h3{margin-top:0}
+  .modal label{display:block;font-size:13px;color:var(--mut);margin:12px 0 5px}
+  .modal input,.modal textarea,.modal select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:14px;outline:none}
+  .dl-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+  .dl-row .dl-st{flex:0 0 auto;min-width:56px;text-align:center}
+  .dl-row .dl-type{flex:0 0 112px;width:112px}
+  .dl-row .dl-url{flex:1}
+  .dl-row button{flex:0 0 auto;padding:9px 12px}
+  .modal textarea{min-height:74px;resize:vertical}
+  .modal .grid2{display:flex;gap:12px}
+  .modal .grid2>div{flex:1}
+  .row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+  .hint{color:var(--mut);font-size:12px}
+  .ext-note{background:var(--bg);border-radius:9px;padding:10px 12px;margin-top:8px;font-size:13px;color:var(--mut)}
+  .st{display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:20px;white-space:nowrap;font-weight:600}
+  .st-ok{background:#e9f9f1;color:var(--ok)}
+  .st-dead{background:#feecec;color:var(--dead)}
+  .st-none{background:#f0f1f5;color:var(--mut)}
+  /* --- 系统设置页 --- */
+  .set-sec{border-top:1px solid var(--line);padding:18px 0 10px}
+  .set-sec:first-child{border-top:0;padding-top:4px}
+  .set-sec h4{margin:0 0 5px;font-size:14.5px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+  .set-sec .tip{color:var(--mut);font-size:12.5px;line-height:1.7;margin-bottom:9px}
+  .set-sec input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;outline:none;font-family:inherit}
+  .set-sec input[type=text]:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(91,91,214,.12)}
+  .inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .inline input[type=text]{flex:1;min-width:180px}
+  .chk{display:flex;gap:9px;align-items:center;font-size:14px;margin:9px 0;cursor:pointer}
+  .chk input{width:16px;height:16px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px;min-height:26px}
+  .chip{display:inline-flex;align-items:center;gap:8px;background:#f2f2fd;border:1px solid #e4e4f8;color:#4a4aa8;border-radius:20px;padding:5px 12px;font-size:13px}
+  .chip b{cursor:pointer;color:#9a9ac4;font-weight:700;font-size:15px;line-height:1}
+  .chip b:hover{color:var(--dead)}
+  .set-flag{font-size:11.5px;font-weight:600;border-radius:20px;padding:2px 9px}
+  .set-flag.on{background:#eef0ff;color:#4a4aa8}
+  .set-flag.off{background:#f0f1f5;color:var(--mut)}
+  .set-msg{font-size:13px;margin-top:12px;min-height:18px;font-weight:600}
+  .fileval{color:var(--mut);font-size:12px;font-family:Consolas,monospace;word-break:break-all}
+  /* --- 安全防护页 --- */
+  .sec-row{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--line)}
+  .sec-row:first-child{border-top:0}
+  .sec-bd{flex:0 0 76px}
+  .sec-badge{display:inline-block;font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px;white-space:nowrap}
+  .sec-badge.y{background:#e9f9f1;color:var(--ok)}
+  .sec-badge.n{background:#fff7e6;color:#b45309}
+  .sec-badge.f{background:#feecec;color:var(--dead)}
+  .sec-nm{font-size:13.5px;font-weight:600}
+  .sec-dt{font-size:12.5px;color:var(--mut);margin-top:3px;word-break:break-all;line-height:1.7}
+/* ===== 站点设置（基础设置 / SEO / 跳转扫码 / 网盘链接 / 接口配置）===== */
+.subtabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:18px}
+.stab{padding:8px 16px;border-radius:9px;font-size:13.5px;color:var(--mut);cursor:pointer;transition:.15s;border:1px solid transparent;background:none}
+.stab:hover{color:var(--pri);background:#f7f7ff}
+.stab.active{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;font-weight:600}
+.site-2col{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.imgpick{display:flex;gap:10px;align-items:center}
+.imgpick img{width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:#f8fafc;flex:0 0 52px}
+.imgpick .ph{width:52px;height:52px;border-radius:10px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:11px;flex:0 0 52px}
+.pending-row{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:var(--card)}
+.pending-row .t{flex:1;min-width:0}
+.pending-row .t b{font-size:13.5px}
+.pending-row .t .u{font-size:11.5px;color:var(--mut);word-break:break-all;line-height:1.7}
+.score{font-size:11.5px;padding:2px 9px;border-radius:20px;background:#eef2ff;color:var(--pri);white-space:nowrap}
+.status-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.status-bar .pill{font-size:12.5px;padding:5px 12px;border-radius:20px;background:var(--bg);color:var(--mut);border:1px solid var(--line)}
+.status-bar .pill b{color:var(--txt)}
+.seo-box{background:#0f172a;color:#c7d2fe;border-radius:11px;padding:13px 15px;font-size:12.5px;line-height:1.9;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace}
+.seo-box em{color:#7dd3fc;font-style:normal}
+/* ============================================================
+   响应式自适应 + 明暗主题（v1.6.1）
+   断点：>=1400 大屏 / <=1024 平板横屏 / <=768 平板竖屏 /
+         <=560 手机 / <=380 小屏手机
+   另覆盖：触屏去 hover 粘滞 / 刘海安全区 / 手机整屏弹层 /
+          表格横滑且首列粘住 / 减少动画 / 打印 / 键盘焦点
+   ============================================================ */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{overflow-wrap:break-word}
+:root[data-theme=light]{color-scheme:light}
+
+/* 键盘可达性：仅键盘聚焦时出现描边 */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,
+.tab:focus-visible,.cat:focus-visible,.stab:focus-visible{outline:3px solid rgba(91,91,214,.5);outline-offset:2px}
+header :focus-visible{outline-color:#fff}
+
+/* 顶栏明暗切换按钮 */
+.themebtn{flex:0 0 auto;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:#fff;
+  padding:6px 11px;font-size:15px;line-height:1;border-radius:9px;cursor:pointer;transition:.15s}
+.themebtn:hover{background:rgba(255,255,255,.3);filter:none;box-shadow:none}
+/* 提示条配色统一走类名，便于暗色适配（原先是内联 style，暗色下会瞎眼） */
+.note-ok{background:#ecfdf5;color:#065f46}
+.note-warn{background:#fff7ed;color:#9a3412}
+.note-err{background:#feecec;color:#b91c1c}
+
+/* 表格横向滚动容器（小屏时表格保持可读宽度，滑动查看） */
+.tablewrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tablewrap::-webkit-scrollbar{height:6px}
+.tablewrap::-webkit-scrollbar-thumb{background:#d7dae4;border-radius:6px}
+table{min-width:680px}
+.pager{flex-wrap:wrap;gap:8px}
+.pager span{font-size:13px;color:var(--mut)}
+
+/* --- 大屏 --- */
+@media (min-width:1400px){
+  :root{--maxw:1320px}
+  .stat-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+}
+
+/* --- 平板横屏及以下 --- */
+@media (max-width:1024px){
+  header{padding-top:13px;padding-bottom:13px}
+  header .sub{font-size:12px;line-height:1.5}
+  .stat-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+}
+
+/* --- 平板竖屏及以下：导航类横滑、表格横滚 + 首列粘住 --- */
+@media (max-width:768px){
+  :root{--pad:13px}
+  header{padding:12px 14px;gap:9px}
+  header h1{font-size:15px}
+  header .sub{display:none}
+  .wrap{margin:14px auto}
+  .card{padding:14px;border-radius:12px;margin-bottom:14px}
+  .tabs,.subtabs,.cats{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tabs::-webkit-scrollbar,.subtabs::-webkit-scrollbar,.cats::-webkit-scrollbar{height:0}
+  .tabs{gap:7px;padding-bottom:3px}
+  .subtabs{gap:6px}
+  .cats{gap:7px;padding-bottom:3px}
+  .tab,.cat,.stab{flex:0 0 auto;min-height:38px;display:inline-flex;align-items:center;justify-content:center}
+  .tab{padding:8px 15px;font-size:13.5px}
+  .cat{padding:7px 14px;font-size:13.5px}
+  .stab{padding:8px 14px;font-size:13px}
+  button{padding:10px 15px;font-size:13.5px}
+  button.sm{padding:8px 12px;font-size:12.5px}
+  .log{font-size:12.5px}
+  .seo-box{overflow-x:auto}
+  .set-sec{padding:15px 0 9px}
+  .set-sec h4{font-size:14px}
+  .tablewrap{border-radius:10px}
+  .tablewrap th:first-child,.tablewrap td:first-child{position:sticky;left:0;z-index:2;
+    background:var(--card);box-shadow:1px 0 0 var(--line)}
+  .tablewrap th:first-child{background:var(--thbg)}
+  .tablewrap tbody tr:hover td:first-child{background:var(--rowhov)}
+  .tablewrap th,.tablewrap td{padding:8px 9px}
+}
+
+/* --- 手机 --- */
+@media (max-width:560px){
+  header{padding:11px 13px}
+  header h1{font-size:14.5px}
+  .themebtn{padding:6px 9px;font-size:14px}
+  .token-bar{padding:11px 13px;gap:8px}
+  .token-bar input{flex:1 1 60px;min-width:0;font-size:16px}
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:9px}
+  .stat{padding:12px}
+  .stat b{font-size:19px}
+  .stat span{font-size:12px}
+  .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .toolbar input[type=text]{grid-column:1 / -1;min-width:0;font-size:16px}
+  .toolbar button{width:100%}
+  .pending-row{flex-direction:column;gap:8px;padding:11px 12px}
+  .pending-row .t .u{font-size:11px}
+  .sec-row{flex-direction:column;gap:7px}
+  .sec-bd{flex:0 0 auto}
+  .site-2col{grid-template-columns:1fr;gap:12px}
+  .inline{gap:7px}
+  .inline input[type=text]{min-width:0;flex:1 1 100%;font-size:16px}
+  .status-bar{gap:6px}
+  .status-bar .pill{font-size:12px;padding:4px 10px;border-radius:16px}
+  .seo-box{padding:12px;font-size:12px}
+  .chips{gap:6px}
+  .chip{padding:5px 10px;font-size:12.5px}
+  /* 弹层：手机上整屏显示，避免软键盘把表单挤到看不见 */
+  .modal{padding:0;align-items:stretch}
+  .modal .box{max-width:none;max-height:none;height:100%;border-radius:0;
+    padding:16px 15px max(26px,calc(env(safe-area-inset-bottom) + 18px))}
+  .modal h3{font-size:16px}
+  .modal input,.modal textarea,.modal select{font-size:16px}
+  .modal .grid2{flex-direction:column;gap:0}
+  .modal .row{gap:8px;margin-top:14px}
+  .modal .row button{flex:1}
+  .dl-row{flex-wrap:wrap;gap:7px}
+  .dl-row .dl-st{min-width:0;flex:0 0 auto}
+  .dl-row .dl-type{flex:1 1 auto;width:auto;min-width:110px}
+  .dl-row .dl-url{flex:1 1 100%}
+  .dl-row button{width:100%;justify-content:center}
+  .ext-note{font-size:12.5px}
+}
+
+/* --- 小屏手机 --- */
+@media (max-width:380px){
+  .stat-grid{gap:8px}
+  .stat b{font-size:17px}
+  .toolbar{grid-template-columns:1fr}
+  .tab,.cat,.stab{font-size:12.5px}
+}
+
+/* --- 手机横屏（高度很小）：弹层不再整屏，改回居中卡片 --- */
+@media (max-height:520px) and (orientation:landscape){
+  header{padding-top:9px;padding-bottom:9px}
+  .modal{align-items:center;padding:10px}
+  .modal .box{height:auto;max-height:94vh;border-radius:14px;margin:auto}
+}
+
+/* --- 触屏：取消 hover 造成的位移与粘滞高亮 --- */
+@media (hover:none){
+  button:hover{filter:none;box-shadow:none}
+  button.ghost:hover{background:var(--card)}
+  .tab:hover,.cat:hover{color:var(--mut)}
+  .tab.active:hover,.cat.active:hover{color:#fff}
+  .stab:hover{color:var(--mut);background:none}
+  .stab.active:hover{color:#fff}
+  .themebtn:hover{background:rgba(255,255,255,.16)}
+  tbody tr:hover{background:transparent}
+  .tablewrap tbody tr:hover td:first-child{background:var(--card)}
+}
+
+/* --- 系统「减少动态效果」--- */
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+
+/* --- 打印：只留内容 --- */
+@media print{
+  header,.token-bar,.tabs,.subtabs,.cats,.toolbar,.row,.pager,.modal,.status-bar{display:none!important}
+  body{background:#fff;color:#000}
+  .wrap{max-width:none;margin:0;padding:0}
+  .card{box-shadow:none;border-color:#ccc;break-inside:avoid;page-break-inside:avoid}
+  .tablewrap{overflow:visible}
+  table{min-width:0}
+  .log{font-size:11px;color:#000}
+  .seo-box{background:#f5f5f5;color:#111}
+}
+
+/* --- 刘海屏安全区（放最后，兜住前面简写里的左右内边距） --- */
+@supports(padding:max(0px)){
+  header{padding-left:max(22px,env(safe-area-inset-left));padding-right:max(22px,env(safe-area-inset-right))}
+  .wrap{padding-left:max(var(--pad),env(safe-area-inset-left));padding-right:max(var(--pad),env(safe-area-inset-right))}
+}
+
+/* ===== 明暗主题：暗色（顶栏按钮切换，或「跟随系统」时由系统偏好决定）===== */
+:root[data-theme=dark]{
+  color-scheme:dark;
+  --bg:#0f1420;--card:#182034;--line:#28324a;--txt:#e6eaf3;--mut:#94a0b8;
+  --ok:#4ade80;--dead:#f87171;--thbg:#1d263b;--rowhov:#1d263b;
+  --shadow:0 6px 22px rgba(0,0,0,.45);
+}
+:root[data-theme=dark] header{box-shadow:0 2px 18px rgba(0,0,0,.5)}
+:root[data-theme=dark] .stat{background:linear-gradient(160deg,#1e2740,#1a2233)}
+:root[data-theme=dark] button.ghost{background:transparent;color:#b3b6f5;border-color:#4a4aa8}
+:root[data-theme=dark] button.ghost:hover{background:#232c45}
+:root[data-theme=dark] .toolbar input,:root[data-theme=dark] .toolbar select,
+:root[data-theme=dark] .token-bar input,:root[data-theme=dark] .modal input,
+:root[data-theme=dark] .modal textarea,:root[data-theme=dark] .modal select,
+:root[data-theme=dark] .set-sec input[type=text]{background:#141c2e;color:var(--txt);border-color:var(--line)}
+:root[data-theme=dark] .modal{background:rgba(0,0,0,.68)}
+:root[data-theme=dark] .thumb{background:#232c45}
+:root[data-theme=dark] .ext-note{background:#1d263b;color:var(--mut)}
+:root[data-theme=dark] .note-ok{background:#10321f;color:#6ee7b7}
+:root[data-theme=dark] .note-warn{background:#3a2f12;color:#fbbf24}
+:root[data-theme=dark] .note-err{background:#3a1a1c;color:#fca5a5}
+:root[data-theme=dark] .st-ok{background:#10321f;color:var(--ok)}
+:root[data-theme=dark] .st-dead{background:#3a1a1c;color:var(--dead)}
+:root[data-theme=dark] .st-none{background:#232c45}
+:root[data-theme=dark] .chip{background:#232c45;border-color:#2f3a56;color:#b9bcf2}
+:root[data-theme=dark] .chip b{color:#8b93b8}
+:root[data-theme=dark] .set-flag.on{background:#232c45;color:#b9bcf2}
+:root[data-theme=dark] .set-flag.off{background:#232c45;color:var(--mut)}
+:root[data-theme=dark] .sec-badge.y{background:#10321f;color:var(--ok)}
+:root[data-theme=dark] .sec-badge.n{background:#3a2f12;color:#fbbf24}
+:root[data-theme=dark] .sec-badge.f{background:#3a1a1c;color:var(--dead)}
+:root[data-theme=dark] .imgpick img,:root[data-theme=dark] .imgpick .ph{background:#1d263b}
+:root[data-theme=dark] .score{background:#262f4a;color:#b3b6f5}
+:root[data-theme=dark] .stab:hover{background:#232c45;color:#b3b6f5}
+:root[data-theme=dark] .stab.active{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff}
+:root[data-theme=dark] .log{color:#c3cad8}
+:root[data-theme=dark] .status-bar .pill{background:#1d263b}
+:root[data-theme=dark] .seo-box{background:#0b1120;color:#c7d2fe;border:1px solid #1e293b}
+:root[data-theme=dark] .tablewrap::-webkit-scrollbar-thumb{background:#37415c}
+:root[data-theme=dark] .themebtn{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.34)}
+</style>
+<script>
+/* 明暗主题：进页面先定好，避免亮色闪一下再变暗 */
+(function(){
+  try{
+    var v = localStorage.getItem('ml_admin_theme');
+    var p = (v === 'light' || v === 'dark' || v === 'auto') ? v : 'auto';
+    var dark = (p === 'dark') || (p === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  }catch(e){ document.documentElement.setAttribute('data-theme', 'light'); }
+})();
+</script>
+</head>
+<body>
+<header>
+  <h1>媒资资料库 · 管理后台</h1>
+  <span class="sub">条目管理 / 链接失效检查 / 系统设置 / 安全防护 / 静态页生成</span>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab">概览</div>
+    <div class="tab">条目管理</div>
+    <div class="tab">系统设置</div>
+    <div class="tab active">安全防护</div>
+    <div class="tab">同步日志</div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <h3>安全防护</h3>
+      <span class="hint">网页安装器带自锁（已安装即 404）；其余安装相关路径、敏感目录与内部 PHP 文件被直接请求时统一返回 404。</span>
+    </div>
+
+    <div class="ext-note">
+      🔒 <b>后台入口已改为「账号 + 密码」登录</b>（v1.8.0）：不再是"填个令牌就能进"，管理员账号在安装时创建。
+      网页安装器带自锁 —— 装好后写入 <code>config/install.lock</code>，它对所有人返回 404，与文件不存在无异；
+      其余安装相关路径、敏感目录、内部 PHP 文件被直接请求时统一返回 404。
+    </div>
+
+    <div style="margin-top:12px">
+      <div class="sec-row">
+        <div class="sec-bd"><span class="sec-badge y">已防护</span></div>
+        <div style="flex:1">
+          <div class="sec-nm">网页安装器 install.php</div>
+          <div class="sec-dt">存在，但已写入 install.lock → 对所有人返回 404（与文件不存在无异），无法被用来重装站点</div>
+        </div>
+      </div>
+
+      <div class="sec-row">
+        <div class="sec-bd"><span class="sec-badge y">已防护</span></div>
+        <div style="flex:1">
+          <div class="sec-nm">命令行安装器 tools/install-cli.php</div>
+          <div class="sec-dt">就位（仅命令行可执行，公网访问 404；与网页安装器共用同一套内核）</div>
+          <div class="hint" style="display:block;margin-top:5px">重装或换服务器时，在宝塔终端执行：<code>php tools/install-cli.php</code></div>
+        </div>
+      </div>
+
+      <div class="sec-row">
+        <div class="sec-bd"><span class="sec-badge y">已防护</span></div>
+        <div style="flex:1">
+          <div class="sec-nm">安装锁 config/install.lock</div>
+          <div class="sec-dt">存在（已标记安装完成）</div>
+        </div>
+      </div>
+
+      <div class="sec-row">
+        <div class="sec-bd"><span class="sec-badge y">已防护</span></div>
+        <div style="flex:1">
+          <div class="sec-nm">敏感目录拒访文件</div>
+          <div class="sec-dt">config / sql / core / adapters / cron / tools 均已放置拒访 index.php</div>
+        </div>
+      </div>
+
+      <div class="sec-row">
+        <div class="sec-bd"><span class="sec-badge y">已防护</span></div>
+        <div style="flex:1">
+          <div class="sec-nm">内部 PHP 文件反直接访问守卫</div>
+          <div class="sec-dt">22 个内部文件均已带守卫（直接用网址请求会返回 404）</div>
+        </div>
+      </div>
+
+      <div class="sec-row">
+        <div class="sec-bd"><span class="sec-badge y">已防护</span></div>
+        <div style="flex:1">
+          <div class="sec-nm">.htaccess（Apache 用）</div>
+          <div class="sec-dt">存在（Apache 自动生效；Nginx 请用宝塔伪静态规则）</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button>🔍 打开环境自检报告</button>
+      <button class="ghost">重新检测</button>
+    </div>
+    <div class="hint" style="margin-top:8px">自检页只认管理员登录态，直接打开即可（已登录就无需再做任何事）。</div>
+  </div>
+
+  <div class="note">界面预览（纯静态演示）· 实际状态由 <code>/api/v1/admin/security</code> 实时探测</div>
+</div>
+<button type="button" onclick="(function(){var d=document.documentElement.getAttribute('data-theme')==='dark';document.documentElement.setAttribute('data-theme',d?'light':'dark');this.textContent=d?'🌙 切到亮色':'☀ 切到暗色';}).call(this)" style="position:fixed;right:14px;bottom:14px;z-index:999;padding:9px 15px;border-radius:22px;border:0;background:linear-gradient(120deg,#5b5bd6,#8b5cf6);color:#fff;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.25)">🌙 切到亮色 / ☀ 切到暗色</button>
+</body>
+</html>
