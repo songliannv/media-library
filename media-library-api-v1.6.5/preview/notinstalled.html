@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>未安装引导页（界面预览）· 媒资资料库</title>
+<style>
+/* ===== 以下为正式样式（index.php 的未安装引导页 CSS），预览页直接复用；改样式请改 index.php ===== */
+:root{--bg:#f1f5f9;--card:#fff;--bd:#e2e8f0;--fg:#0f172a;--mut:#475569;--cbg:#f1f5f9;--cfg:#be123c;--brand:#4f46e5;--wbg:#fef3c7;--wfg:#92400e;--sbg:#ecfdf5;--sfg:#065f46}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1220;--card:#111c2e;--bd:#1e293b;--fg:#e2e8f0;--mut:#94a3b8;--cbg:#0f172a;--cfg:#fda4af;--brand:#6366f1;--wbg:#3a2e0a;--wfg:#fcd34d;--sbg:#0c2a22;--sfg:#6ee7b7}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:34px 30px;max-width:620px;width:100%;box-shadow:0 18px 44px rgba(15,23,42,.08)}
+h1{font-size:20px;margin-bottom:12px}
+p{color:var(--mut);font-size:13.5px;line-height:1.85;margin-bottom:10px}
+code{background:var(--cbg);padding:2px 6px;border-radius:5px;font-family:Consolas,monospace;color:var(--cfg);font-size:12.5px}
+ol{margin:6px 0 0 20px;color:var(--mut);font-size:13.5px;line-height:2}
+ol code{white-space:nowrap}
+.go{display:inline-block;margin:6px 0 2px;background:var(--brand);color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 22px;border-radius:11px;box-shadow:0 8px 20px rgba(79,70,229,.28)}
+.gohint{margin-top:9px;color:var(--mut);font-size:12.5px;line-height:1.75}
+.divide{height:1px;background:var(--bd);margin:18px 0 14px}
+.warn{margin-top:14px;background:var(--wbg);color:var(--wfg);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.75}
+.safe{margin-top:10px;background:var(--sbg);color:var(--sfg);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.75}
+@media (max-width:640px){.card{padding:26px 20px;border-radius:14px}.go{display:block;text-align:center}}
+/* ===== 预览台附加样式 ===== */
+.demo{background:rgba(100,116,139,.10);border-bottom:1px solid var(--bd);color:var(--mut);font-size:12px;padding:9px 16px;text-align:center;line-height:1.6}
+.demo b{color:var(--fg)}
+.stage{padding:26px 20px 46px;display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 42px)}
+</style>
+</head>
+<body>
+
+<div class="demo">📐 <b>静态界面预览</b> · 未安装引导页 <code>/</code>（站点尚未安装时，访问首页看到的就是这一页）</div>
+
+<div class="stage">
+<div class="card">
+  <h1>🛠 站点尚未安装</h1>
+  <p>检测到 <code>config/config.php</code> 仍是<b>示例配置</b>（数据库信息未填写），所以还不能对外提供数据。</p>
+  <div class="divide"></div>
+  <a class="go" href="javascript:void(0)">🚀 开始网页安装</a>
+  <div class="gohint">在浏览器里按向导填好数据库信息即可，<b>不用终端</b>。装好后 <code>install.php</code> 会立刻自动 404，别人无法借它重装本站。</div>
+  <div class="divide"></div>
+  <p><b>也可以这样做：</b></p>
+  <ol>
+    <li><b>打开安装向导</b>：浏览器访问 <code>/install.php</code>（就是上面的按钮），按向导填数据库信息，自动建表并生成配置。</li>
+    <li><b>命令行安装</b>：在宝塔 <b>终端</b> 里进入站点目录，执行 <code>php tools/install-cli.php</code>，按提示填数据库信息，会自动建表并生成配置。</li>
+    <li><b>手动安装</b>：把 <code>config/config.sample.php</code> 复制为 <code>config/config.php</code> 并填好数据库信息，再导入 <code>sql/install.sql</code> 建表。</li>
+    <li>装好后访问 <code>check.php?token=你的后台令牌</code> 做一次完整体检。</li>
+  </ol>
+  <div class="warn">⚠️ 点按钮若仍是 <b>404</b>：说明伪静态里还留着旧规则
+    <code>location ~* ^/(install|setup|upgrade|update)</code>，Nginx 会把安装器一并拦掉。
+    把它改成 <code>location ~* ^/(setup|upgrade|update)</code>（<b>去掉 install</b>）保存即可。</div>
+  <div class="safe">🔒 <b>网页安装器是带自锁的</b>：只在「尚未安装」时可用；装好后会写入 <code>config/install.lock</code>，它立刻对所有人返回 404，没人能借它重装本站或读取环境信息。</div>
+</div>
+</div>
+
+</body>
+</html>
