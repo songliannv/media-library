@@ -1351,7 +1351,8 @@ function renderSyncParams(){
 function syncEffective(settingKey, meta){
   const map = {sync_limit:'limit',sync_max_pages:'max_pages',sync_max_requests:'max_requests',
     sync_window:'window',sync_order:'order',sync_min_votes:'min_votes',sync_dedupe:'dedupe',
-    sync_skip_same_title:'skip_same_title',sync_interval:'interval',sync_build:'build'};
+    sync_skip_same_title:'skip_same_title',sync_interval:'interval',sync_build:'build',
+    sync_hourly_enabled:'hourly_enabled',sync_hourly_limit:'hourly_limit'};
   const child = map[settingKey];
   const p = (SYNC_PLAN && SYNC_PLAN.params) ? SYNC_PLAN.params : {};
   if(child && p[child]!=null) return String(p[child]);

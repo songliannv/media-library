@@ -1,5 +1,33 @@
 # 版本记录 · media-library-api
 
+## v2.2.0（2026-09-24）
+
+- **修：详情页演员阵容不显示**（`core/Views.php`）
+  - v2.1.1 起 `Tmdb::normalize()` 从 credits 抽取演员到 `extra.cast`
+    （字段结构 `{name, character, profile_path}`），
+    但 `Views::castBlock()` 读的是 `payload.credits.cast`（TMDB 原始字段）——
+    两条路径互不连通，前台永远看不到演员。
+  - v2.2.0：`castBlock()` 优先读 `extra.cast`，保留 `payload.credits.cast` 兜底
+    （老数据 / 手动写入 payload 的场景）。
+  - 升级后需后台「生成静态页」刷新已生成的 `/uisc/*.html` 内页。
+
+- **新增：每小时自动采集可配置**（`core/Settings.php` / `cron/sync_hourly.php`）
+  - 新增两个设置键（后台「同步采集」页可直接改）：
+    - `sync_hourly_enabled`（开/关，默认 1）
+    - `sync_hourly_limit`（1~50，默认 5 条/小时）
+  - `cron/sync_hourly.php` 启动时读 Settings：
+    - 关闭 → 直接跳过、退出码 0（宝塔计划任务不会告警）
+    - 开启 → CLI 没传 `--limit` 时吃 Settings 的 `hourly_limit`（默认 5）
+  - 不影响后台「立即同步」用的 `sync_limit`（那是每源手动条数）。
+
+- **新增：标签详情路由 /tag/{slug}**（`index.php` / `core/Views.php`）
+  - 新增路由：`/tag/{slug}` → `CacheStore::listBySort(sort,type,page,per,'',tag)`
+    （复用 `/?tag=xxx` 的查询逻辑，只是 URL 永久、易 SEO）
+  - 详情页标签胶囊从 `<span class="t">` 改为 `<a class="t" href="/tag/{slug}">`
+  - 首页标签云链接从 `/?tag=xxx` 统一改为 `/tag/xxx`
+  - 首页 /tag 页面顶部显示「当前标签：xxx · 清除标签」提示条（复用 v1.8.8 的 tagBar）
+
+
 ## v2.1.3（2026-09-24）
 
 - **新增：TMDB ⇋ 短剧聚合 跨源联动**（`core/CrossLink.php`）
