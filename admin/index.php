@@ -1,13 +1,125 @@
 <?php
-/**
- * 后台管理界面（纯前端 SPA，无需额外依赖）
- * 通过 /api/v1/admin/* 与后端交互，请求头带 X-Admin-Token。
- * 条目管理按 6 大分类（短剧/电影/电视剧/动漫/综艺/游戏）建栏目，每类可新增/编辑/删除。
- * 网盘类型来自 config/pan_types.php（可随升级包扩展），此处不写死。
- * 新增：下载链接「失效检查」——单条 / 批量检测，结果以状态标展示。
- */
-header('Content-Type: text/html; charset=utf-8');
-?>
+use Core\Config;use Core\User;if(!defined('ML_APP')){define('ML_APP',true);}if(!defined('ML_ROOT')){define('ML_ROOT',dirname(__DIR__));}if(!defined('ML_APP_VERSION')){define('ML_APP_VERSION','2.0.4');}header('Content-Type: text/html; charset=utf-8');header('X-Robots-Tag: noindex, nofollow');require_once __DIR__.'/../core/Guard.php';ml_guard_shield(__FILE__);require_once __DIR__.'/../core/Session.php';require_once __DIR__.'/../core/DB.php';require_once __DIR__.'/../core/Config.php';require_once __DIR__.'/../core/User.php';$a=ml_session_boot(User::SESS);function ml_ad_csrf(){if(empty($_SESSION['ml_ad_csrf'])){if(function_exists('openssl_random_pseudo_bytes')){$_SESSION['ml_ad_csrf']=bin2hex(openssl_random_pseudo_bytes(16));}else{$_SESSION['ml_ad_csrf']=md5(uniqid((string)mt_rand(),true));}}return(string)$_SESSION['ml_ad_csrf'];}$b=trim((string)Config::sub('admin','dir','admin'));if($b===''||strpos($b,'admin')!==strlen($b)-5){$b='admin';}$c='/'.$b.'/';$d='';$e='';$f='';$g=isset($_POST['ad_do'])?(string)$_POST['ad_do']:'';if($g===''&&isset($_POST['u'],$_POST['p'])){$g='login';}if($g==='login'){$f='user';if(!$a){$d='服务器无法保存登录会话（session 不可写），所以登不上去。'.'请打开 check.php 看「会话」一栏，或让服务商把 PHP 的 session.save_path 目录设为可写。';}elseif(!isset($_POST['csrf'])||!hash_equals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期（登录会话没保持住），请再提交一次；若反复如此，请打开 check.php 看「会话」一栏。';}elseif(isset($_POST['ml_hp'])&&trim((string)$_POST['ml_hp'])!==''){$d='检测到异常提交，已忽略。';}else{$h=isset($_POST['u'])?(string)$_POST['u']:'';$i=isset($_POST['p'])?(string)$_POST['p']:'';$j=User::login($h,$i);if(!empty($j['ok'])){if(User::isAdmin()){header('Location: '.$c);exit;}User::logout();$d='该账号不是管理员，无法进入后台。';}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='forgot'){if(!isset($_POST['csrf'])||!hash_equals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::requestReset(isset($_POST['account'])?(string)$_POST['account']:'','admin');if(!empty($j['ok'])){$e=(string)$j['msg'];}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='reset'){if(!isset($_POST['csrf'])||!hash_equals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::doReset(isset($_POST['token'])?(string)$_POST['token']:'',isset($_POST['new'])?(string)$_POST['new']:'',isset($_POST['new2'])?(string)$_POST['new2']:'');if(!empty($j['ok'])){$e=(string)$j['msg'].' 请用新密码登录。';}else{$d=(string)$j['msg'];}}}if(isset($_GET['logout'])){User::logout();header('Location: '.$c);exit;}$k=User::me();if(!$k||!User::isAdmin()){$l='login';$m='';if(isset($_GET['reset'])){$l='reset';$m=(string)$_GET['reset'];}elseif(isset($_GET['forgot'])){$l='forgot';}if($e!==''&&$l==='reset'){$l='login';}$n=($l==='reset')?(User::verifyResetToken($m)!==null):false;?><!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台登录 · 媒资资料库</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#eef2f7;--card:#fff;--line:#e2e8f0;--txt:#0f172a;--mut:#64748b;
+      --pri:#4f46e5;--pri2:#7c3aed;--bad:#dc2626;--shadow:0 10px 34px rgba(15,23,42,.12)}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0f1420;--card:#182034;--line:#28324a;--txt:#e6eaf3;--mut:#94a0b8;
+        --shadow:0 10px 34px rgba(0,0,0,.5)}
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+     background:var(--bg);color:var(--txt);min-height:100vh;display:flex;align-items:center;
+     justify-content:center;padding:20px;-webkit-font-smoothing:antialiased}
+.box{width:100%;max-width:390px}
+.head{text-align:center;margin-bottom:22px}
+.logo{width:60px;height:60px;border-radius:17px;margin:0 auto 14px;display:flex;align-items:center;
+      justify-content:center;font-size:28px;background:linear-gradient(135deg,var(--pri),var(--pri2));
+      box-shadow:0 8px 22px rgba(79,70,229,.35)}
+.head h1{font-size:20px;font-weight:700}
+.head p{color:var(--mut);font-size:13px;margin-top:6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:var(--shadow)}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin-bottom:6px}
+input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:transparent;
+      color:var(--txt);font-size:15px;outline:none;margin-bottom:14px;transition:border-color .15s,box-shadow .15s}
+input:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(79,70,229,.14)}
+button{width:100%;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:600;color:#fff;
+       cursor:pointer;background:linear-gradient(120deg,var(--pri),var(--pri2));transition:filter .15s,transform .1s}
+button:hover{filter:brightness(1.07)}
+button:active{transform:translateY(1px)}
+.err{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.28);color:var(--bad);
+     border-radius:10px;padding:10px 13px;font-size:13px;margin-bottom:14px;line-height:1.6}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.ok{background:rgba(15,157,99,.1);border:1px solid rgba(15,157,99,.28);color:#0f9d63;border-radius:10px;padding:10px 13px;font-size:13px;margin-bottom:14px;line-height:1.6}
+.mini{color:var(--mut);font-size:12.5px;margin-top:12px;line-height:1.75}
+.mini a{color:var(--pri);text-decoration:none}
+.mini a:hover{text-decoration:underline}
+.foot{text-align:center;color:var(--mut);font-size:12px;margin-top:18px;line-height:1.8}
+@media (max-width:420px){.card{padding:20px 17px;border-radius:14px}}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="head">
+    <div class="logo">🛡</div>
+    <h1>媒资资料库 · 管理后台</h1>
+    <p><?php echo($l==='forgot')?'找回密码':(($l==='reset')?'设置新密码':'请用管理员账号登录');?></p>
+  </div>
+  <div class="card">
+    <?php if(!$a):?>
+    <div class="err">⚠️ 服务器没有保存住会话（session），登录会一直跳回本页。<br>
+      请打开 <code>check.php</code> 看「会话」一栏，或让服务商把 PHP 的 <code>session.save_path</code> 目录设为可写。</div>
+    <?php endif;?>
+    <?php if($d!==''):?>
+    <div class="err"><?php echo htmlspecialchars($d,ENT_QUOTES,'UTF-8');?></div>
+    <?php endif;?>
+    <?php if($e!==''):?>
+    <div class="ok"><?php echo htmlspecialchars($e,ENT_QUOTES,'UTF-8');?></div>
+    <?php endif;?>
+
+    <?php if($l==='forgot'):?>
+    <!-- 找回密码：输入账号 / 邮箱，发一封带重置链接的邮件 -->
+    <form method="post" action="<?php echo htmlspecialchars($c,ENT_QUOTES,'UTF-8');?>?forgot=1" autocomplete="off">
+      <input type="hidden" name="ad_do" value="forgot">
+      <input type="hidden" name="csrf" value="<?php echo htmlspecialchars(ml_ad_csrf(),ENT_QUOTES,'UTF-8');?>">
+      <label>管理员账号 / 邮箱</label>
+      <input type="text" name="account" value="" placeholder="用户名，或账号绑定的邮箱" required autofocus autocomplete="username">
+      <button type="submit">发送重置邮件</button>
+    </form>
+    <p class="mini">重置链接会发到账号绑定的邮箱，1 小时内有效、只能用一次。<br>
+      还没绑定邮箱？请先用密码登录，在右上角「修改密码」里填写邮箱。<br>
+      <a href="<?php echo htmlspecialchars($c,ENT_QUOTES,'UTF-8');?>">← 返回登录</a></p>
+
+    <?php elseif($l==='reset'):?>
+    <?php if(!$n):?>
+    <!-- 链接无效 / 已过期 -->
+    <div class="err">这个重置链接无效或已过期（可能已被使用，或超过 1 小时）。请重新发起「找回密码」。</div>
+    <p class="mini"><a href="<?php echo htmlspecialchars($c,ENT_QUOTES,'UTF-8');?>?forgot=1">重新找回密码</a>　·　<a href="<?php echo htmlspecialchars($c,ENT_QUOTES,'UTF-8');?>">返回登录</a></p>
+    <?php else:?>
+    <!-- 设置新密码 -->
+    <form method="post" action="<?php echo htmlspecialchars($c.'?reset='.urlencode($m),ENT_QUOTES,'UTF-8');?>" autocomplete="off">
+      <input type="hidden" name="ad_do" value="reset">
+      <input type="hidden" name="csrf" value="<?php echo htmlspecialchars(ml_ad_csrf(),ENT_QUOTES,'UTF-8');?>">
+      <input type="hidden" name="token" value="<?php echo htmlspecialchars($m,ENT_QUOTES,'UTF-8');?>">
+      <label>新密码</label>
+      <input type="password" name="new" value="" placeholder="至少 6 位" required autofocus autocomplete="new-password">
+      <label>确认新密码</label>
+      <input type="password" name="new2" value="" placeholder="再输一次" required autocomplete="new-password">
+      <button type="submit">设置新密码</button>
+    </form>
+    <p class="mini"><a href="<?php echo htmlspecialchars($c,ENT_QUOTES,'UTF-8');?>">← 返回登录</a></p>
+    <?php endif;?>
+
+    <?php else:?>
+    <!-- 正常登录 -->
+    <form method="post" action="<?php echo htmlspecialchars($c,ENT_QUOTES,'UTF-8');?>" autocomplete="off">
+      <input type="hidden" name="ad_do" value="login">
+      <input type="hidden" name="csrf" value="<?php echo htmlspecialchars(ml_ad_csrf(),ENT_QUOTES,'UTF-8');?>">
+      <input class="hp" type="text" name="ml_hp" value="" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <label>管理员账号 / 邮箱</label>
+      <input id="u" type="text" name="u" value="" placeholder="安装时填的邮箱或账号" required autofocus autocomplete="username">
+      <label>密码</label>
+      <input type="password" name="p" value="" placeholder="你的密码" required autocomplete="current-password">
+      <button type="submit">登 录</button>
+    </form>
+    <p class="mini"><a href="<?php echo htmlspecialchars($c,ENT_QUOTES,'UTF-8');?>?forgot=1">忘记密码？</a></p>
+    <?php endif;?>
+  </div>
+  <div class="foot">
+    这不是给外部调用者的入口。<br>
+    外部调用 API 用的是「API 令牌」，在后台「API 调用」页里单独发。
+  </div>
+</div>
+</body>
+</html>
+<?php
+exit;}?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -22,8 +134,9 @@ header('Content-Type: text/html; charset=utf-8');
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased}
   header{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;padding:15px 22px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 18px rgba(91,91,214,.28)}
   header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.3px}
-  header .sub{font-size:12.5px;opacity:.85;margin-left:auto}
-  .wrap{max-width:var(--maxw);margin:20px auto;padding:0 var(--pad)}
+  header .sver{font-size:11px;opacity:.75;font-weight:400;margin-left:6px;padding:2px 7px;background:rgba(255,255,255,.15);border-radius:8px;white-space:nowrap}
+  header .sub{font-size:13.5px;opacity:.9;margin-left:auto;line-height:1.5;padding-left:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:680px}
+  .wrap{max-width:var(--maxw);margin:20px auto;padding:0 var(--pad);overflow:hidden}
   .token-bar{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:var(--shadow)}
   .token-bar input{flex:1;min-width:220px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;outline:none}
   .tabs{display:flex;gap:8px;margin-bottom:16px}
@@ -86,6 +199,15 @@ header('Content-Type: text/html; charset=utf-8');
   .inline input[type=text]{flex:1;min-width:180px}
   .chk{display:flex;gap:9px;align-items:center;font-size:14px;margin:9px 0;cursor:pointer}
   .chk input{width:16px;height:16px}
+  /* --- 数据源行：勾选 + 测试按钮 + 连通说明 --- */
+  .src-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:2px 0}
+  .src-row .chk{margin:6px 0}
+  .src-state{font-size:12px;color:var(--mut);word-break:break-all;line-height:1.7}
+  .src-state.src-ok{color:var(--ok)}
+  .src-state.src-dead{color:var(--dead)}
+  .src-ok{color:var(--ok)}
+  .src-dead{color:var(--dead)}
+  .src-mut{color:var(--mut)}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px;min-height:26px}
   .chip{display:inline-flex;align-items:center;gap:8px;background:#f2f2fd;border:1px solid #e4e4f8;color:#4a4aa8;border-radius:20px;padding:5px 12px;font-size:13px}
   .chip b{cursor:pointer;color:#9a9ac4;font-weight:700;font-size:15px;line-height:1}
@@ -110,7 +232,7 @@ header('Content-Type: text/html; charset=utf-8');
 .stab{padding:8px 16px;border-radius:9px;font-size:13.5px;color:var(--mut);cursor:pointer;transition:.15s;border:1px solid transparent;background:none}
 .stab:hover{color:var(--pri);background:#f7f7ff}
 .stab.active{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;font-weight:600}
-.site-2col{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.site-2col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 22px}
 .imgpick{display:flex;gap:10px;align-items:center}
 .imgpick img{width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:#f8fafc;flex:0 0 52px}
 .imgpick .ph{width:52px;height:52px;border-radius:10px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:11px;flex:0 0 52px}
@@ -153,7 +275,7 @@ header :focus-visible{outline-color:#fff}
 .tablewrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tablewrap::-webkit-scrollbar{height:6px}
 .tablewrap::-webkit-scrollbar-thumb{background:#d7dae4;border-radius:6px}
-table{min-width:680px}
+table{min-width:auto;max-width:100%}
 .pager{flex-wrap:wrap;gap:8px}
 .pager span{font-size:13px;color:var(--mut)}
 
@@ -161,12 +283,13 @@ table{min-width:680px}
 @media (min-width:1400px){
   :root{--maxw:1320px}
   .stat-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  .site-2col{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 22px}
 }
 
 /* --- 平板横屏及以下 --- */
 @media (max-width:1024px){
   header{padding-top:13px;padding-bottom:13px}
-  header .sub{font-size:12px;line-height:1.5}
+  header .sub{font-size:12.5px;line-height:1.5;max-width:none;white-space:normal}
   .stat-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 }
 
@@ -342,7 +465,7 @@ table{min-width:680px}
 .req-row .tt{font-weight:700;font-size:14.5px;word-break:break-word}
 .req-row .mt{color:var(--mut);font-size:12.5px;margin-top:7px;line-height:1.8;word-break:break-word}
 .req-row .nt{font-size:13px;margin-top:8px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
-.req-row .ops{display:grid;grid-template-columns:170px 1fr auto;gap:9px;align-items:start;margin-top:11px}
+.req-row .ops{display:grid;grid-template-columns:140px 1fr auto;gap:9px;align-items:start;margin-top:11px}
 .req-row .ops select,.req-row .ops textarea{width:100%}
 .req-row .ops textarea{min-height:46px;resize:vertical;font-family:inherit}
 .req-row .opbtns{display:flex;gap:8px;flex-wrap:wrap}
@@ -386,17 +509,18 @@ table{min-width:680px}
 <body>
 <header>
   <h1>媒资资料库 · 管理后台</h1>
-  <span class="sub">条目管理 / 采集同步 / 站点设置（基础·SEO·跳转扫码·网盘·接口）/ 下载链接检查 / 静态页生成 · 手机 / 平板 / 大屏自适应</span>
+  <span class="sver">Ver <?php echo htmlspecialchars((string)ML_APP_VERSION,ENT_QUOTES,'UTF-8');?></span>
+  <span class="sub">条目管理 · 采集同步 · 站点设置 · 下载链接检查 · 静态页生成 · 手机 / 平板 / 大屏自适应</span>
   <button type="button" class="themebtn" onclick="toggleTheme()" title="切换明暗主题">🌗</button>
 </header>
 <div class="wrap">
   <div class="token-bar">
-    <span class="hint">管理 Token：</span>
-    <input id="token" type="text" placeholder="填入 config.php 中 admin.token" />
-    <button class="ghost" onclick="saveToken()">保存</button>
-    <span id="tokenState" class="hint"></span>
+    <span class="hint">当前登录：</span>
+    <b style="margin-right:auto"><?php echo htmlspecialchars((string)$k['username'],ENT_QUOTES,'UTF-8');?></b>
+    <button type="button" class="ghost sm" onclick="openPwd()">修改密码</button>
+    <a class="ghost" href="<?php echo htmlspecialchars($c,ENT_QUOTES,'UTF-8');?>?logout=1"
+       style="text-decoration:none;padding:6px 13px;border-radius:8px;font-size:13px">退出登录</a>
   </div>
-
   <div class="tabs">
     <div class="tab active" data-tab="overview" onclick="switchTab('overview')">概览</div>
     <div class="tab" data-tab="items" onclick="switchTab('items')">条目管理</div>
@@ -404,8 +528,11 @@ table{min-width:680px}
     <div class="tab" data-tab="settings" onclick="switchTab('settings')">系统设置</div>
     <div class="tab" data-tab="site" onclick="switchTab('site')">站点设置</div>
     <div class="tab" data-tab="request" onclick="switchTab('request')">资源请求</div>
+    <div class="tab" data-tab="apitoken" onclick="switchTab('apitoken')">API 调用</div>
     <div class="tab" data-tab="security" onclick="switchTab('security')">安全防护</div>
     <div class="tab" data-tab="logs" onclick="switchTab('logs')">同步日志</div>
+    <div class="tab" data-tab="scrape" onclick="switchTab('scrape')">自动刮削</div>
+    <div class="tab" data-tab="users" onclick="switchTab('users')">用户中心</div>
   </div>
 
   <div id="tab-overview" class="tabpane">
@@ -422,6 +549,9 @@ table{min-width:680px}
         <button class="cat" data-cat="anime">动漫</button>
         <button class="cat" data-cat="variety">综艺</button>
         <button class="cat" data-cat="game">游戏</button>
+        <button class="cat" data-cat="book">书籍</button>
+        <button class="cat" data-cat="music">音乐</button>
+        <button class="cat" data-cat="other">其他</button>
       </div>
       <div class="toolbar">
         <input type="text" id="q" placeholder="搜索标题…" onkeydown="if(event.key==='Enter')loadItems()">
@@ -514,6 +644,50 @@ table{min-width:680px}
     <div class="card"><div class="log" id="logs"></div></div>
   </div>
 
+  <div id="tab-scrape" class="tabpane" style="display:none">
+    <div class="card">
+      <h2>自动刮削</h2>
+      <p class="hint">自动从 TMDB 补充缺失的海报和背景图</p>
+      <div class="form-row">
+        <label>类型筛选：</label>
+        <select id="scrapeType">
+          <option value="">全部</option>
+          <option value="movie">电影</option>
+          <option value="tv">电视剧</option>
+          <option value="anime">动漫</option>
+          <option value="short">短剧</option>
+          <option value="variety">综艺</option>
+          <option value="game">游戏</option>
+          <option value="book">书籍</option>
+          <option value="music">音乐</option>
+          <option value="other">其他</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>每次处理数量：</label>
+        <input type="number" id="scrapeLimit" value="50" min="10" max="500" style="width:100px">
+      </div>
+      <div class="form-row" style="margin-top:16px">
+        <button onclick="startScrape()">开始刮削</button>
+        <button class="ghost" onclick="clearScrapeResult()">清除结果</button>
+      </div>
+      <div id="scrapeStatus" style="margin-top:16px"></div>
+      <div id="scrapeLog" style="margin-top:8px;max-height:300px;overflow-y:auto;font-family:monospace;font-size:12px;background:#f5f5f5;padding:8px;border-radius:4px;display:none"></div>
+    </div>
+  </div>
+  <div id="tab-users" class="tabpane" style="display:none">
+    <div class="card">
+      <h2>用户中心</h2>
+      <div class="toolbar">
+        <input type="text" id="userQ" placeholder="搜索用户名/邮箱..." onkeydown="if(event.key==='Enter')loadUsers()">
+        <button onclick="loadUsers()">查询</button>
+        <button class="ghost" onclick="loadUsers()">刷新</button>
+      </div>
+      <div id="userBox"><div class="hint">加载中...</div></div>
+      <div class="pager" id="userPager"></div>
+    </div>
+  </div>
+
   <div id="tab-site" class="tabpane" style="display:none">
     <div class="card">
       <div class="subtabs" id="siteSubtabs">
@@ -523,6 +697,7 @@ table{min-width:680px}
         <button class="stab" data-stab="pan"    onclick="switchSiteTab('pan')">网盘链接</button>
         <button class="stab" data-stab="pansou" onclick="switchSiteTab('pansou')">接口配置</button>
         <button class="stab" data-stab="req"    onclick="switchSiteTab('req')">资源请求</button>
+        <button class="stab" data-stab="mail"   onclick="switchSiteTab('mail')">邮件服务</button>
       </div>
       <div id="siteBox"><div class="hint">加载中…</div></div>
       <div class="inline" style="margin-top:18px">
@@ -560,6 +735,56 @@ table{min-width:680px}
     </div>
   </div>
 
+  <div id="tab-apitoken" class="tabpane" style="display:none">
+    <div class="card">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:15px">API 调用令牌</h3>
+        <span class="hint">把资料库 API 开放给外部系统/个人调用时，在这里给每个调用者发一个独立令牌 —— 可分别限制每日调用次数与来源 IP，并查看「谁在什么时候调用了什么」。</span>
+      </div>
+      <div class="ext-note" style="margin-top:11px">
+        调用方式：请求头 <code>X-Api-Token: 你的令牌</code>，或 URL 参数 <code>?token=你的令牌</code><br>
+        示例：<code id="apiDemo">GET /api/v1/search?q=庆余年&amp;token=xxxx</code>
+        <button class="ghost sm" style="margin-left:8px" onclick="copyApiDemo()">复制示例</button>
+      </div>
+      <div class="stat-grid" id="tkStats" style="margin-top:13px"></div>
+      <div class="toolbar">
+        <button onclick="openTokenAdd()">+ 新建令牌</button>
+        <button class="ghost" onclick="loadTokens()">刷新</button>
+        <button class="ghost" onclick="switchApiSub('tokens')">令牌列表</button>
+        <button class="ghost" onclick="switchApiSub('logs')">调用记录</button>
+      </div>
+    </div>
+
+    <div class="card" id="tkListCard">
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>名称</th><th>令牌</th><th>状态</th><th>今日/限额</th><th>累计</th><th>最后调用</th><th>操作</th></tr></thead>
+          <tbody id="tkRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="tkLogCard" style="display:none">
+      <div class="toolbar">
+        <input type="text" id="logStart" placeholder="开始日期 2026-09-01">
+        <input type="text" id="logEnd" placeholder="结束日期 2026-09-30">
+        <select id="logToken" onchange="loadApiLogs()"></select>
+        <button onclick="loadApiLogs()">查询</button>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>时间</th><th>令牌</th><th>接口</th><th>方法</th><th>IP</th><th>耗时</th></tr></thead>
+          <tbody id="logRows"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button class="ghost sm" onclick="logPage(-1)">上一页</button>
+        <span id="logPageInfo" class="hint"></span>
+        <button class="ghost sm" onclick="logPage(1)">下一页</button>
+      </div>
+    </div>
+  </div>
+
   <div id="tab-security" class="tabpane" style="display:none">
     <div class="card">
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
@@ -571,7 +796,7 @@ table{min-width:680px}
         <button onclick="openSelfCheck()">🔍 打开环境自检报告</button>
         <button class="ghost" onclick="loadSecurity()">重新检测</button>
       </div>
-      <div class="hint" style="margin-top:8px">自检报告会自动带上当前后台令牌，无需手动输入；令牌在「系统设置」里可随时更换。</div>
+      <div class="hint" style="margin-top:8px">自检页只认管理员登录态，直接打开即可（已登录就无需再做任何事）。</div>
     </div>
   </div>
 </div>
@@ -602,6 +827,35 @@ table{min-width:680px}
       <button class="ghost" onclick="closeModal()">取消</button>
       <button onclick="saveEdit()">保存</button>
     </div>
+    <div class="form-row" style="margin-top:16px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="e_downloadImages" value="1">
+        <span>自动下载海报/背景图到服务器本地</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- 修改密码 / 邮箱（右上角「修改密码」按钮打开） -->
+<div class="modal" id="pwdModal">
+  <div class="box" style="max-width:470px">
+    <h3 style="margin-top:0">修改密码</h3>
+    <p class="hint" style="margin:0 0 4px">改完立即生效，下次请用新密码登录。邮箱用于「找回密码」，建议填写。</p>
+    <?php
+$o=(string)$k['email'];if($o===\Core\User::ADMIN_TAG){$o='';}?>
+    <label>账号邮箱（找回密码用，可留空）</label>
+    <input id="pw_email" type="email" value="<?php echo htmlspecialchars($o,ENT_QUOTES,'UTF-8');?>" placeholder="you@example.com">
+    <label>当前密码（改密码时必填）</label>
+    <input id="pw_old" type="password" placeholder="输入当前登录密码" autocomplete="current-password">
+    <label>新密码（不改密码就留空）</label>
+    <input id="pw_new" type="password" placeholder="至少 6 位" autocomplete="new-password">
+    <label>确认新密码</label>
+    <input id="pw_new2" type="password" placeholder="再输一次" autocomplete="new-password">
+    <div id="pwMsg" class="set-msg"></div>
+    <div class="row">
+      <button class="ghost" onclick="closePwd()">取消</button>
+      <button onclick="savePwd()">保存修改</button>
+    </div>
   </div>
 </div>
 
@@ -623,8 +877,8 @@ let LINK_STATUS = {}; // url => true(有效)/false(失效)
  * 现在任何异常/非 JSON 一律转成 {success:false, error:"…"}，页面必定给出提示。
  */
 async function api(path, opts={}){
-  const tk = localStorage.getItem('ml_token') || '';
-  opts.headers = Object.assign({'X-Admin-Token': tk, 'Content-Type':'application/json'}, opts.headers||{});
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  opts.credentials = 'same-origin';   /* 带上登录会话 Cookie */
   let r;
   try {
     r = await fetch(API + path, opts);
@@ -640,7 +894,7 @@ async function api(path, opts={}){
     if(r.status===502 || r.status===504) hint = '（网关超时／上游错误：本次操作耗时过长，或 PHP 报错被面板拦下）';
     else if(r.status===500) hint = '（服务器内部错误：多为 PHP 致命错误，可打开 check.php 看第 7 组语法检查）';
     else if(r.status===404) hint = '（接口不存在：站点需配置 Nginx 伪静态，见部署文档第四节）';
-    else if(r.status===403) hint = '（被拒绝：管理令牌不对，或被面板安全规则拦截）';
+    else if(r.status===403) hint = '（被拒绝：未登录管理员账号，或被面板安全规则拦截）';
     const peek = String(txt||'').replace(/\s+/g,' ').slice(0,180);
     return {success:false, error:'服务器返回了非 JSON 内容（HTTP '+r.status+'）'+hint+(peek?('：'+peek):''), _http:r.status};
   }
@@ -657,7 +911,6 @@ async function busy(btn, text, fn){
   try { return await fn(); }
   finally { btn.disabled = was; btn.textContent = old; }
 }
-function saveToken(){ localStorage.setItem('ml_token', document.getElementById('token').value); document.getElementById('tokenState').innerText='已保存'; }
 
 async function loadSchema(){
   const d = await api('/api/v1/categories');
@@ -679,8 +932,11 @@ function switchTab(t){
   if(t==='settings') loadSettings();
   if(t==='site') loadSite();
   if(t==='request') loadReq();
+  if(t==='apitoken') loadTokens();
   if(t==='logs') loadLogs();
   if(t==='security') loadSecurity();
+  if(t==='scrape') renderScrapePanel();
+  if(t==='users') loadUsers();
 }
 async function loadStats(){
   const d = await api('/api/v1/admin/stats');
@@ -691,6 +947,125 @@ async function loadStats(){
   for(const k in s.by_source) h+=`<div class="stat"><b>${s.by_source[k]}</b><span>源:${k}</span></div>`;
   document.getElementById('stats').innerHTML=h;
 }
+
+/* ============ API 调用令牌（v1.7.0）============ */
+let TK_LIST=[], TK_PAGE=1, LOG_PAGE=1, API_SUB='tokens';
+function switchApiSub(which){
+  API_SUB=which;
+  document.getElementById('tkListCard').style.display = (which==='tokens')?'block':'none';
+  document.getElementById('tkLogCard').style.display  = (which==='logs')?'block':'none';
+  if(which==='logs') loadApiLogs();
+}
+function copyApiDemo(){
+  const el=document.getElementById('apiDemo');
+  const txt=(el?el.innerText:'');
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(()=>alert('已复制：'+txt),()=>alert(txt)); }
+  else { alert(txt); }
+}
+async function loadTokens(){
+  const st=await api('/api/v1/admin/token_stats');
+  if(st.success){
+    const s=st.data;
+    document.getElementById('tkStats').innerHTML=
+      `<div class="stat"><b>${s.total_tokens||0}</b><span>令牌总数</span></div>`+
+      `<div class="stat"><b>${s.active_tokens||0}</b><span>启用中</span></div>`+
+      `<div class="stat"><b>${s.today_calls||0}</b><span>今日调用</span></div>`+
+      `<div class="stat"><b>${s.yesterday_calls||0}</b><span>昨日调用</span></div>`+
+      `<div class="stat"><b>${s.total_calls||0}</b><span>累计调用</span></div>`;
+  }
+  const d=await api(`/api/v1/admin/token_list?page=${TK_PAGE}`);
+  const box=document.getElementById('tkRows');
+  if(!d.success){ box.innerHTML=`<tr><td colspan="7" class="hint">${esc(d.error||'加载失败')}</td></tr>`; return; }
+  TK_LIST=d.data.items||[];
+  if(!TK_LIST.length){ box.innerHTML='<tr><td colspan="7" class="hint">还没有令牌。点上方「+ 新建令牌」给调用者发一个。</td></tr>'; refreshLogTokenSel(); return; }
+  let h='';
+  TK_LIST.forEach(k=>{
+    const on=(String(k.status)==='1');
+    const quota=(Number(k.daily_limit)>0)?(' / '+k.daily_limit):' / 不限';
+    h+=`<tr>
+      <td><b>${esc(k.name||'')}</b></td>
+      <td><code class="tkv" title="点击复制" onclick="copyTk('${esc(k.token)}')">${esc(String(k.token||'').slice(0,12))}…</code></td>
+      <td><span class="ubadge ${on?'approved':'rejected'}">${on?'启用':'已禁用'}</span></td>
+      <td>${k.today_calls||0}${quota}</td>
+      <td>${k.usage_count||0}</td>
+      <td>${esc(String(k.last_used||'—').slice(0,16))}</td>
+      <td style="white-space:nowrap">
+        <button class="ghost sm" onclick="toggleTk(${k.id},${on?0:1})">${on?'禁用':'启用'}</button>
+        <button class="ghost sm" onclick="editTk(${k.id})">编辑</button>
+        <button class="ghost sm" onclick="delTk(${k.id})">删除</button>
+      </td></tr>`;
+  });
+  box.innerHTML=h;
+  refreshLogTokenSel();
+}
+function copyTk(v){
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(v).then(()=>alert('令牌已复制：'+v),()=>alert(v)); }
+  else { alert(v); }
+}
+function refreshLogTokenSel(){
+  const sel=document.getElementById('logToken');
+  if(!sel) return;
+  let h='<option value="0">全部令牌</option>';
+  TK_LIST.forEach(k=>{ h+=`<option value="${k.id}">${esc(k.name||('#'+k.id))}</option>`; });
+  sel.innerHTML=h;
+}
+async function toggleTk(id,st){
+  const d=await api('/api/v1/admin/token_save',{method:'POST',body:JSON.stringify({id:id,status:st})});
+  if(!d.success){ alert(d.error||'操作失败'); return; }
+  loadTokens();
+}
+function editTk(id){
+  const k=TK_LIST.find(x=>Number(x.id)===Number(id)); if(!k) return;
+  const name=prompt('令牌名称（用途说明）', k.name||''); if(name===null) return;
+  const lim =prompt('每日调用上限（0 = 不限）', String(k.daily_limit||0)); if(lim===null) return;
+  const ip  =prompt('IP 白名单（逗号分隔，留空 = 不限）', k.ip_whitelist||''); if(ip===null) return;
+  api('/api/v1/admin/token_save',{method:'POST',body:JSON.stringify({id:id,name:name,daily_limit:parseInt(lim)||0,ip_whitelist:ip})})
+    .then(d=>{ if(!d.success){alert(d.error||'保存失败');return;} loadTokens(); });
+}
+async function delTk(id){
+  const k=TK_LIST.find(x=>Number(x.id)===Number(id));
+  if(!confirm('确定删除令牌「'+((k&&k.name)||id)+'」？该令牌将立即失效，其调用记录也会一并删除。')) return;
+  const d=await api('/api/v1/admin/token_del',{method:'POST',body:JSON.stringify({id:id})});
+  if(!d.success){ alert(d.error||'删除失败'); return; }
+  loadTokens();
+}
+async function openTokenAdd(){
+  const name=prompt('给谁用？（填名称，例如：客户A / 某某App）'); if(!name) return;
+  const lim =prompt('每日调用上限（0 = 不限）','0'); if(lim===null) return;
+  const ip  =prompt('IP 白名单（逗号分隔，留空 = 不限）',''); if(ip===null) return;
+  const d=await api('/api/v1/admin/token_add',{method:'POST',body:JSON.stringify({name:name,daily_limit:parseInt(lim)||0,ip_whitelist:ip})});
+  if(!d.success){ alert(d.error||'创建失败'); return; }
+  alert('令牌已创建，请复制保存：\n\n'+d.data.token+'\n\n（它只在这里完整显示这一次）');
+  loadTokens();
+}
+async function loadApiLogs(){
+  const box=document.getElementById('logRows');
+  box.innerHTML='<tr><td colspan="6" class="hint">加载中…</td></tr>';
+  const tid=document.getElementById('logToken').value||0;
+  const sd=document.getElementById('logStart').value.trim();
+  const ed=document.getElementById('logEnd').value.trim();
+  const d=await api(`/api/v1/admin/api_logs?page=${LOG_PAGE}&token_id=${tid}&start=${encodeURIComponent(sd)}&end=${encodeURIComponent(ed)}`);
+  if(!d.success){ box.innerHTML=`<tr><td colspan="6" class="hint">${esc(d.error||'加载失败')}</td></tr>`; return; }
+  const items=d.data.items||[];
+  document.getElementById('logPageInfo').innerText='第 '+LOG_PAGE+' 页 / 共 '+(d.data.total||0)+' 条';
+  if(!items.length){ box.innerHTML='<tr><td colspan="6" class="hint">这段时间没有调用记录。</td></tr>'; return; }
+  let h='';
+  items.forEach(r=>{
+    h+=`<tr>
+      <td>${esc(String(r.created_at||'').slice(0,19))}</td>
+      <td>${esc(r.token_name||('#'+r.token_id))}</td>
+      <td><code>${esc(r.endpoint||'')}</code></td>
+      <td>${esc(r.method||'')}</td>
+      <td>${esc(r.ip||'')}</td>
+      <td>${r.cost_ms||0} ms</td></tr>`;
+  });
+  box.innerHTML=h;
+}
+function logPage(n){
+  if(n<0 && LOG_PAGE<=1) return;
+  LOG_PAGE+=n; loadApiLogs();
+}
+
 // 分类切换
 document.getElementById('cats').addEventListener('click', e=>{
   if(e.target.classList.contains('cat')){
@@ -779,6 +1154,36 @@ async function openEdit(id){
 }
 function statusOf(url){ return (url && url in LINK_STATUS) ? LINK_STATUS[url] : null; }
 function closeModal(){ document.getElementById('modal').style.display='none'; }
+
+/* ---- 修改密码 / 邮箱（右上角按钮） ---- */
+function openPwd(){
+  const m=document.getElementById('pwdModal');
+  if(!m) return;
+  ['pw_old','pw_new','pw_new2'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  const msg=document.getElementById('pwMsg'); if(msg){ msg.innerText=''; msg.style.color=''; }
+  m.style.display='flex';
+}
+function closePwd(){ const m=document.getElementById('pwdModal'); if(m) m.style.display='none'; }
+async function savePwd(){
+  const msg=document.getElementById('pwMsg');
+  const em   = (document.getElementById('pw_email').value||'').trim();
+  const oldp = document.getElementById('pw_old').value||'';
+  const n1   = document.getElementById('pw_new').value||'';
+  const n2   = document.getElementById('pw_new2').value||'';
+  const fail = function(t){ if(msg){ msg.style.color='var(--dead)'; msg.innerText=t; } };
+  const payload = { email: em };
+  if(oldp || n1 || n2){
+    if(!oldp){ return fail('请输入当前密码。'); }
+    if(n1.length<6){ return fail('新密码至少 6 位。'); }
+    if(n1!==n2){ return fail('两次输入的新密码不一致。'); }
+    payload.old=oldp; payload.new=n1; payload.new2=n2;
+  }
+  if(msg){ msg.style.color='var(--mut)'; msg.innerText='保存中…'; }
+  const d = await api('/api/v1/admin/password',{method:'POST',body:JSON.stringify(payload)});
+  if(!d.success){ return fail(d.error||'修改失败'); }
+  if(msg){ msg.style.color='var(--ok)'; msg.innerText='✓ '+((d.data&&d.data.msg)?d.data.msg:'已保存'); }
+  setTimeout(closePwd, 1200);
+}
 async function saveEdit(){
   const type=document.getElementById('e_type').value;
   const genres=document.getElementById('e_genres').value.split(',').map(s=>s.trim()).filter(Boolean);
@@ -794,6 +1199,7 @@ async function saveEdit(){
     genres:JSON.stringify(genres),
     poster:document.getElementById('e_poster').value.trim(),
     backdrop:document.getElementById('e_backdrop').value.trim(),
+    download_images:document.getElementById('e_downloadImages')?.checked ? '1' : '0',
     download_url:collectDownloads(),
     overview:document.getElementById('e_overview').value,
     extra:JSON.stringify(extra),
@@ -813,8 +1219,6 @@ async function del(id){ if(!confirm('确认删除 #'+id+' ？')) return; const d
  * force=true 忽略「最小间隔」；dry=true 只探测接口不入库。
  */
 async function triggerSync(force, btn){
-  const tk = localStorage.getItem('ml_token') || '';
-  if(!tk){ alert('请先在页面顶部填入管理 Token 并点「保存」，再执行采集。'); return; }
   const st  = document.getElementById('syncState');
   const box = document.getElementById('syncReport');
   if(btn) btn.disabled = true;
@@ -831,8 +1235,6 @@ async function triggerSync(force, btn){
   loadStats(); loadItems(); loadSyncPlan(); loadSyncRecent();
 }
 async function dryRun(btn){
-  const tk = localStorage.getItem('ml_token') || '';
-  if(!tk){ alert('请先填入管理 Token 并点「保存」。'); return; }
   const box = document.getElementById('syncReport');
   if(btn) btn.disabled = true;
   const d = await api('/api/v1/admin/sync', {method:'POST', body: JSON.stringify({dry:true, force:true})});
@@ -892,14 +1294,27 @@ async function loadSyncPlan(){
   const pbox = document.getElementById('syncParams');
   const box  = document.getElementById('syncPlan');
   const cbox = document.getElementById('cronBox');
+  const rbox = document.getElementById('syncRecent');
   if(pbox) pbox.innerHTML = '<div class="hint">正在加载…</div>';
   const [plan, set] = await Promise.all([ api('/api/v1/admin/sync_plan'), api('/api/v1/admin/settings') ]);
-  if(!plan.success){ if(pbox) pbox.innerHTML='<div class="hint">'+esc(plan.error||'加载失败')+'</div>'; return; }
+  if(!plan.success){
+    /* ★ v2.1.0 fix：原来只在 pbox 里写错误，box/cbox/rbox 三个卡片永远停在"正在加载…"。
+       用户如果没滚到最上面就看不到 pbox 里的报错，只看到三块空白，以为"卡住了"。
+       这里把同一个错误文案同时写进所有相关容器，确保无论用户滚动到哪个位置都能看见。 */
+    const err = '<div class="hint">⚠ ' + esc(plan.error||'加载失败') + '</div>';
+    if(pbox) pbox.innerHTML = err;
+    if(box)  box.innerHTML  = err;
+    if(cbox) cbox.innerHTML = err;
+    if(rbox) rbox.innerHTML = err;
+    return;
+  }
   SYNC_PLAN = plan.data;
   if(set.success && set.data && set.data.meta){ SYNC_META = set.data.meta; }
   renderSyncParams();
   renderSyncPlanTable();
   renderCronBox();
+  /* 顺手把"最近采集记录"也一起填了，免得 loadSync() 里再等一次 */
+  loadSyncRecent();
 }
 function renderSyncParams(){
   const pbox = document.getElementById('syncParams');
@@ -1013,7 +1428,10 @@ function copyCron(){
 }
 async function loadSyncRecent(){
   const box = document.getElementById('syncRecent');
-  if(!box || !SYNC_PLAN) return;
+  if(!box) return;
+  /* ★ v2.1.0 fix：SYNC_PLAN 没准备好（接口失败 / 还没跑完）时，
+     原来直接 return 让"最近采集记录"卡在"正在加载…"，现在显式提示。 */
+  if(!SYNC_PLAN){ box.innerHTML = '<div class="hint">采集参数加载失败，暂无法显示采集记录（先解决上方参数卡片里的错误）</div>'; return; }
   const rs = SYNC_PLAN.recent || [];
   if(!rs.length){ box.innerHTML = '<div class="hint">还没有采集记录。点上面的「立即采集」或配好计划任务后就会出现在这里。</div>'; return; }
   let h = '<table><thead><tr><th>时间</th><th>触发方式</th><th>新增</th><th>结果</th><th>各源</th></tr></thead><tbody>';
@@ -1113,14 +1531,19 @@ async function checkAll(){
   loadItems();
 }
 
-// ===== 系统设置（令牌 / API Key / 数据源 / 网盘类型）=====
+// ===== 系统设置（API Key / 数据源 / 网盘类型）=====
 let SET = null;        // 后端返回的设置视图
 let PAN_DRAFT = [];    // 网盘类型草稿（保存时才提交）
 let TXT_DRAFT = null;  // 编辑中的文本值（重绘页面时保留，避免刚打的字被清空）
 let AD_DRAFT  = null;  // 编辑中的数据源勾选
+let SET_TS    = {};    // 数据源连通状态：{tmdb:{ok,label,detail}, hongguoduanju:{…}}
+const SRCS = [
+  {kind:'tmdb',    name:'TMDB'},
+  {kind:'hongguoduanju', name:'红果短剧（国产短剧）'}
+];
 
-const TXT_KEYS = ['admin_token','tmdb_api_key','rawg_api_key'];
-const AD_KEYS  = ['tmdb','rawg','bangumi'];
+const TXT_KEYS = ['tmdb_api_key'];
+const AD_KEYS  = ['tmdb','hongguoduanju'];
 
 function mask(s){
   s = String(s||'');
@@ -1157,7 +1580,8 @@ const SITE_GROUPS = {
   jump:   ['redirect'],
   pan:    ['pan'],
   pansou: ['pansou'],
-  req:    ['req']
+  req:    ['req'],
+  mail:   ['mail']
 };
 const SITE_HINTS = {
   basic:  '站点名称、LOGO 与页脚 —— 决定前台顶栏和页脚长什么样。',
@@ -1165,7 +1589,8 @@ const SITE_HINTS = {
   jump:   'PC 访客打开首页时的处理方式（跳转 / 扫码 / 两者），以及前台模板、明暗模式与顶部导航。前台已做手机 / 平板 / 大屏自适应。',
   pan:    '各网盘的 Cookie 与转存目录，供后续转存 / 直链能力使用；本页只负责保存与状态显示。',
   pansou: '对接 PanSou 网盘搜索服务：每次采集入库新资源后，自动搜索并补写网盘下载地址。',
-  req:    '注册与「资源请求」页的开关：谁能注册、谁能提交、列表是否公开、每人每天能提几条。改完立即生效，前台顶栏与页面文案跟着变。'
+  req:    '注册与「资源请求」页的开关：谁能注册、谁能提交、列表是否公开、每人每天能提几条。改完立即生效，前台顶栏与页面文案跟着变。',
+  mail:   '找回密码的发信服务（SMTP）：填邮箱的 SMTP 账号与授权码、打开开关，点「发送测试邮件」验证。QQ / 163 / Gmail 需先在邮箱设置里生成「授权码」当密码用；没配好时「忘记密码」会明确提示，不会静默失败。'
 };
 const PAN_ACCOUNTS = { quark:'夸克网盘', aliyun:'阿里云盘', baidu:'百度网盘', uc:'UC网盘', xunlei:'迅雷云盘', guangya:'光鸭网盘' };
 
@@ -1222,7 +1647,9 @@ function fieldRow(k, mm, ii){
       <input type="file" id="F_${k}" accept="image/*" style="display:none" onchange="uploadImage('${k}',this)">
     </div>`;
   } else {
-    input = `<input type="text" id="S_${k}" value="${esc(val)}">`;
+    /* SMTP 密码 / 授权码按密码框渲染，避免被人瞟到 */
+    const pwd = (k === 'mail_pass');
+    input = `<input type="${pwd?'password':'text'}" id="S_${k}" value="${esc(val)}"${pwd?' autocomplete="new-password" placeholder="邮箱授权码或登录密码"':''}>`;
   }
   return `<div class="set-sec">
     <h4>${esc(mm.label||k)} ${flag(ii.override)}</h4>
@@ -1248,10 +1675,21 @@ function renderSite(){
       <span class="pill">插件：<b>${st?st.plugins:'—'}</b></span>
       <span class="pill">延迟：<b>${st?(st.ms+' ms'):'—'}</b></span>
       <span class="pill">待确认：<b id="pendCount">—</b></span>
-      <button class="ghost" onclick="testPansou()">测试连接</button>
+      <button class="ghost" onclick="testPansou(this)">测试连接</button>
       <button class="ghost" onclick="clearPansouCache()">清空搜索缓存</button>
     </div>`;
     if(st && st.message){ h += `<div class="ext-note ${st.ok?'note-ok':'note-err'}">${esc(st.message)}</div>`; }
+  }
+
+  // 邮件服务页顶部：发送测试邮件（可用还没保存的草稿值先测）
+  if(SITE_TAB==='mail'){
+    h += `<div class="status-bar">
+      <span class="pill">发信状态：<b id="mailState">未测试</b></span>
+      <span class="pill">收件人</span>
+      <input type="text" id="mailTestTo" placeholder="留空 = 发给发件人邮箱自己" style="max-width:230px">
+      <button class="ghost" onclick="testMail(this)">发送测试邮件</button>
+    </div>
+    <div id="mailTestOut" style="margin:0 0 12px"></div>`;
   }
 
   const keys = siteKeys();
@@ -1359,6 +1797,31 @@ async function resetSite(){
   msg.style.color='var(--ok)'; msg.innerText='✓ 已恢复为 config.php 里的值';
   renderSite();
 }
+/* ---- 邮件服务：发送测试邮件（先测再存：草稿值一起提交） ---- */
+async function testMail(btn){
+  collectSiteDraft();
+  const body = { to:((document.getElementById('mailTestTo')||{}).value||'').trim() };
+  ['mail_enable','mail_host','mail_port','mail_secure','mail_user','mail_pass','mail_from','mail_from_name']
+    .forEach(k=>{ if(SITE_DRAFT[k]!==undefined) body[k]=SITE_DRAFT[k]; });
+  const st  = document.getElementById('mailState');
+  const out = document.getElementById('mailTestOut');
+  await busy(btn,'发送中…', async()=>{
+    if(st) st.innerText='发送中…';
+    if(out) out.innerHTML='<div class="ext-note">正在连接 SMTP 服务器，最长等 1 分钟…</div>';
+    const d = await api('/api/v1/admin/mail_test',{method:'POST',body:JSON.stringify(body)});
+    if(!d.success){
+      if(st) st.innerText='失败';
+      if(out) out.innerHTML='<div class="ext-note note-err">'+esc(d.error||'测试失败')+'</div>';
+      return;
+    }
+    const r = d.data||{};
+    if(st) st.innerText = r.ok ? '连通 ✓' : '失败';
+    let h = '';
+    if(r.msg) h += '<div class="ext-note '+(r.ok?'note-ok':'note-err')+'">'+esc(r.msg)+'</div>';
+    if(!r.ok && r.log) h += '<div class="ext-note">SMTP 会话日志（排查用）：<pre style="white-space:pre-wrap;margin:4px 0 0;font-size:12px">'+esc(r.log)+'</pre></div>';
+    if(out) out.innerHTML = h;
+  });
+}
 function pickImage(k){ const f=document.getElementById('F_'+k); if(f) f.click(); }
 async function uploadImage(k, inp){
   const file = inp.files && inp.files[0];
@@ -1367,10 +1830,9 @@ async function uploadImage(k, inp){
   if(file.size > 2*1024*1024){ msg.style.color='var(--dead)'; msg.innerText='图片太大了，请压到 2MB 以内'; inp.value=''; return; }
   msg.style.color='var(--mut)'; msg.innerText='上传中…';
   const fd = new FormData(); fd.append('kind', k); fd.append('file', file);
-  const tk = localStorage.getItem('ml_token') || '';
   let d;
   try{
-    const r = await fetch(API+'/api/v1/admin/site_upload',{method:'POST',headers:{'X-Admin-Token':tk},body:fd});
+    const r = await fetch(API+'/api/v1/admin/site_upload',{method:'POST',credentials:'same-origin',body:fd});
     const txt = await r.text();
     try{ d = JSON.parse(txt); }catch(e){ d = {success:false, error:'服务器返回了非 JSON（HTTP '+r.status+'）：'+String(txt).slice(0,160)}; }
     if(d && d.success===undefined) d.success = (r.status>=200 && r.status<300);
@@ -1383,38 +1845,64 @@ async function uploadImage(k, inp){
   renderSite();
 }
 /* ---- 接口配置：测试 / 试搜 / 补地址 / 缓存 ---- */
-async function testPansou(){
-  const msg = document.getElementById('siteMsg');
+/**
+ * 测试 PanSou 连通。
+ * 之前"点了没反应"的两个原因：① siteMsg 元素在某些渲染路径下取不到，赋值直接抛错、
+ * 函数中断（页面上什么都不显示）；② 探测上游可能要十几秒，期间没有任何进度提示，
+ * 用户以为按钮坏了。现在：元素兜底 + 中途进度 + 明确的结果/失败提示 + 按钮忙碌态。
+ */
+async function testPansou(btn){
+  const msg = document.getElementById('siteMsg') || setMsgFallback();
   collectSiteDraft();
-  if(Object.keys(SITE_DRAFT).length){
-    const d0 = await api('/api/v1/admin/settings',{method:'POST',body:JSON.stringify(SITE_DRAFT)});
-    if(!d0.success){ msg.style.color='var(--dead)'; msg.innerText='先保存再测试：'+(d0.error||''); return; }
-    SITE.items = d0.data.items || SITE.items;
-    SITE_DRAFT = {};
+  const draftLen = Object.keys(SITE_DRAFT).length;
+  if(msg){ msg.style.color='var(--mut)'; msg.innerText = draftLen ? '先保存当前改动…' : '正在连接 PanSou（最长可能等十几秒）…'; }
+  await busy(btn, '测试中…', async ()=>{
+    if(draftLen){
+      const d0 = await api('/api/v1/admin/settings',{method:'POST',body:JSON.stringify(SITE_DRAFT)});
+      if(!d0.success){ if(msg){ msg.style.color='var(--dead)'; msg.innerText='先保存再测试：'+(d0.error||''); } return; }
+      SITE.items = d0.data.items || SITE.items;
+      SITE_DRAFT = {};
+      renderSite();
+    }
+    if(msg){ const m2=document.getElementById('siteMsg'); if(m2){ m2.style.color='var(--mut)'; m2.innerText='正在连接 PanSou（最长可能等十几秒）…'; } }
+    const d = await api('/api/v1/admin/pansou_test',{method:'POST',body:'{}'});
+    const m3 = document.getElementById('siteMsg') || msg;
+    if(!d.success){ if(m3){ m3.style.color='var(--dead)'; m3.innerText='✗ '+(d.error||'测试失败'); } return; }
+    PANSOU_STATE = d.data;
+    if(m3){
+      m3.style.color = d.data.ok ? 'var(--ok)' : 'var(--dead)';
+      m3.innerText = (d.data.ok?'✓ ':'✗ ') + (d.data.message||(d.data.ok?'可用':'不可用'));
+    }
     renderSite();
+  });
+}
+/** 万一页面上找不到 siteMsg（比如标签页结构变了），临时造一个，保证一定给得出提示 */
+function setMsgFallback(){
+  let box = document.getElementById('siteBox');
+  if(!box) return null;
+  let el = document.getElementById('siteMsg');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'siteMsg'; el.className = 'set-msg';
+    box.appendChild(el);
   }
-  msg.style.color='var(--mut)'; msg.innerText='正在连接 PanSou …';
-  const d = await api('/api/v1/admin/pansou_test',{method:'POST',body:'{}'});
-  if(!d.success){ msg.style.color='var(--dead)'; msg.innerText=d.error||'测试失败'; return; }
-  PANSOU_STATE = d.data;
-  msg.style.color = d.data.ok ? 'var(--ok)' : 'var(--dead)';
-  msg.innerText = (d.data.ok?'✓ ':'✗ ') + (d.data.message||'');
-  renderSite();
+  return el;
 }
 async function searchPansou(){
-  const box = document.getElementById('siteBox');
   const kw = (document.getElementById('pansouKw')||{}).value;
   if(!kw || !kw.trim()){ alert('先填写要试搜的关键词'); return; }
   const out = document.getElementById('pansouResult');
-  out.innerHTML = '<div class="hint">搜索中…</div>';
+  if(!out){ alert('试搜区域未就绪，请刷新后台页面后重试。'); return; }
+  out.innerHTML = '<div class="hint">搜索中…（上游较慢时可能要十几秒）</div>';
   const d = await api('/api/v1/admin/pansou_search',{method:'POST',body:JSON.stringify({kw:kw.trim()})});
-  if(!d.success){ out.innerHTML='<div class="hint" style="color:var(--dead)">'+esc(d.error||'搜索失败')+'</div>'; return; }
-  const r = d.data;
-  let h = `<div class="hint">共 ${r.total} 条${r.cached?'（来自缓存）':''}</div>`;
-  if(!r.types.length){ h += '<div class="hint">没有搜到结果。可以换个关键词，或到 PanSou 里确认频道 / 插件已加载。</div>'; }
-  r.types.forEach(t=>{
+  if(!d.success){ out.innerHTML='<div class="hint" style="color:var(--dead)">✗ '+esc(d.error||'搜索失败')+'</div>'; return; }
+  const r = d.data || {};
+  const types = r.types || [];
+  let h = `<div class="hint">共 ${r.total||0} 条${r.cached?'（来自缓存）':''}</div>`;
+  if(!types.length){ h += '<div class="hint">没有搜到结果。可以换个关键词，或到 PanSou 里确认频道 / 插件已加载。</div>'; }
+  types.forEach(t=>{
     h += `<div class="set-sec"><h4>${esc(t.label)} <span class="hint">${t.count} 条</span></h4>`;
-    t.top.forEach(x=>{ h += `<div class="u" style="font-size:12px;word-break:break-all;color:var(--mut)">${esc(x.note||'（无标题）')}<br>${esc(x.url)}</div>`; });
+    (t.top||[]).forEach(x=>{ h += `<div class="u" style="font-size:12px;word-break:break-all;color:var(--mut)">${esc(x.note||'（无标题）')}<br>${esc(x.url)}</div>`; });
     h += `</div>`;
   });
   out.innerHTML = h;
@@ -1675,29 +2163,35 @@ function renderSettings(){
   const m = SET.meta, it = SET.items;
   let h='';
 
+  /* 数据源连通状态栏：一次把 TMDB / 红果短剧 两个源试一遍 */
+  h += `<div class="status-bar">
+    <span class="pill">TMDB：<b id="st_tmdb">${SET_TS.tmdb?SET_TS.tmdb.label:'未测试'}</b></span>    <span class="pill">红果短剧：<b id="st_hongguoduanju">${SET_TS.hongguoduanju?SET_TS.hongguoduanju.label:'未测试'}</b></span>
+    <button type="button" class="ghost" id="btnTestAll" onclick="testAllSources()">一键测试全部数据源</button>
+    <span class="hint">红果短剧（动漫）免 Key，可直接测；结果只是「本站服务器能否连上该站点」的探测，不影响已入库数据。</span>
+  </div>`;
+
   if(SET.table_ok === false){
     h += `<div class="ext-note note-warn">⚠️ 设置表 <b>${esc(SET.table||'app_settings')}</b> 创建失败：当前数据库用户可能没有建表权限。
       请到宝塔 → 数据库 → 该库的用户 → 权限勾选「所有权限」，或手动导入 <b>sql/migrate_settings.sql</b> 后重试。</div>`;
   }
 
-  // 文本项：后台令牌 / TMDB Key / RAWG Key
+  // 文本项：TMDB Key
   TXT_KEYS.forEach(k=>{
     const mm = m[k]||{}, ii = it[k]||{};
     const val = (TXT_DRAFT && TXT_DRAFT[k]!=null) ? TXT_DRAFT[k] : ii.value;
-    const kind = (k==='tmdb_api_key') ? 'tmdb' : (k==='rawg_api_key' ? 'rawg' : '');
+    const kind = (k==='tmdb_api_key') ? 'tmdb' : '';
     h += `<div class="set-sec">
       <h4>${esc(mm.label||k)} ${flag(ii.override)}</h4>
       <div class="tip">${esc(mm.tip||'')}</div>
       <div class="inline">
         <input type="text" id="s_${k}" value="${esc(val)}" placeholder="${esc(ii.file)}">
-        ${k==='admin_token' ? '<button type="button" class="ghost" onclick="genToken()">随机生成</button>' : ''}
-        ${kind ? `<button type="button" class="ghost" onclick="testKey('${kind}')">测试连通</button>` : ''}
+        ${kind ? `<button type="button" class="ghost" onclick="testKey('${kind}', true)">测试此 Key</button>` : ''}
       </div>
       <div class="fileval">config.php 里的值：${esc(mask(ii.file))}</div>
     </div>`;
   });
 
-  // 数据源开关
+  // 数据源开关：每个源后面都挂一个「测试连通」（红果短剧 免 key 也能测）
   const ma = m.adapters||{}, ia = it.adapters||{};
   const cur = AD_DRAFT ? AD_DRAFT : (ia.value||[]);
   h += `<div class="set-sec"><h4>${esc(ma.label)} ${flag(ia.override)}</h4>
@@ -1705,7 +2199,13 @@ function renderSettings(){
   const opts = ma.options||{};
   for(const k in opts){
     const on = cur.indexOf(k)>=0;
-    h += `<label class="chk"><input type="checkbox" id="a_${k}" value="${esc(k)}" ${on?'checked':''}>${esc(opts[k])}</label>`;
+    const kind = (k==='tmdb') ? 'tmdb' : (k==='hongguoduanju' ? 'hongguoduanju' : '');
+    const ts = (kind && SET_TS[kind]) ? SET_TS[kind] : null;
+    h += `<div class="src-row">
+      <label class="chk"><input type="checkbox" id="a_${k}" value="${esc(k)}" ${on?'checked':''}>${esc(opts[k])}</label>
+      ${kind ? `<button type="button" class="ghost sm" onclick="testKey('${kind}')">测试连通</button>
+        <span class="src-state" id="ss_${kind}">${ts?esc(ts.detail||ts.label):(kind==='hongguoduanju'?'免 Key，可直接测':'需先填 Key')}</span>` : ''}
+    </div>`;
   }
   h += `<div class="fileval">config.php 里的值：${esc((ia.file||[]).join(' / ')||'（空）')}</div></div>`;
 
@@ -1727,21 +2227,12 @@ function renderSettings(){
 
   document.getElementById('setBox').innerHTML = h;
 }
-function genToken(){
-  const a = new Uint8Array(12);
-  (window.crypto || window.msCrypto).getRandomValues(a);
-  collectDraft();
-  TXT_DRAFT['admin_token'] = Array.prototype.map.call(a, x=>('0'+x.toString(16)).slice(-2)).join('');
-  renderSettings();
-  const m=document.getElementById('setMsg'); m.style.color='var(--mut)';
-  m.innerText='已生成新令牌，记得点「保存设置」';
-}
 function addPan(){
   const el = document.getElementById('s_panNew');
   let v = (el.value||'').trim().replace(/[,，、;；]+/g,' ').trim();
   if(!v) return;
   if(PAN_DRAFT.indexOf(v)>=0){ alert('「'+v+'」已存在'); el.value=''; return; }
-  collectDraft();                 // 先保住已输入的令牌/Key
+  collectDraft();                 // 先保住已输入的 Key
   PAN_DRAFT.push(v);
   renderSettings();
   const box=document.getElementById('s_panNew'); if(box){ box.value=''; box.focus(); }
@@ -1752,16 +2243,13 @@ async function saveSettings(){
   const msg = document.getElementById('setMsg');
   collectDraft();
   const body = {
-    admin_token:  (TXT_DRAFT['admin_token']||'').trim(),
     tmdb_api_key: (TXT_DRAFT['tmdb_api_key']||'').trim(),
-    rawg_api_key: (TXT_DRAFT['rawg_api_key']||'').trim(),
     adapters: (AD_DRAFT||[]).slice(),
     pan_types: PAN_DRAFT.slice()
   };
   msg.style.color='var(--mut)'; msg.innerText='保存中…';
   const d = await api('/api/v1/admin/settings',{method:'POST',body:JSON.stringify(body)});
   if(!d.success){ msg.style.color='var(--dead)'; msg.innerText=d.error||'保存失败'; return; }
-  if(d.data.token){ localStorage.setItem('ml_token', d.data.token); document.getElementById('token').value=d.data.token; }
   SET.items = d.data.items || SET.items;
   PAN_DRAFT = (SET.items.pan_types.value||[]).slice();
   TXT_DRAFT = null; AD_DRAFT = null;
@@ -1780,16 +2268,52 @@ async function resetAllSettings(){
   msg.style.color='var(--ok)'; msg.innerText='✓ 已恢复为 config.php 里的值';
   renderSettings(); loadSchema();
 }
-async function testKey(kind){
-  const id = (kind==='tmdb') ? 's_tmdb_api_key' : 's_rawg_api_key';
+/**
+ * 测试某个数据源能否连通。
+ *  - 点数据源那一行 / 状态栏的按钮：useDraft 省略，直接用「已保存」的配置测；
+ *  - 点 Key 输入框旁的「测试此 Key」：useDraft=true，先拿框里正在编辑的值测（不落库）。
+ * 之所以要区分，是因为以前无论点哪里都会去读输入框；TMDB 的输入框
+ * 初始值就是已保存的值，看似能用；而 红果短剧 从来没有输入框，于是压根没按钮。
+ */
+async function testKey(kind, useDraft){
+  const id = (kind==='tmdb') ? 's_tmdb_api_key' : '';
+  const el = id ? document.getElementById(id) : null;
+  const key = useDraft ? (el ? el.value.trim() : '') : '';
+  setTestState(kind, null, '测试中…', 'mut');
+  const d = await api('/api/v1/admin/settings_test',{method:'POST',body:JSON.stringify({kind:kind, key:key})});
+  if(!d.success){ setTestState(kind, false, d.error||'测试失败', 'dead'); return false; }
+  const r = d.data || {};
+  const detail = (r.ok?'✓ 可用':'✗ 不可用') + ' · HTTP ' + (r.code||0) + (r.msg ? (' · '+r.msg) : '');
+  setTestState(kind, !!r.ok, detail, r.ok?'ok':'dead');
+  return !!r.ok;
+}
+/** 一键把三个源依次测一遍（红果短剧 免 key 也会测），带进度与总结果 */
+async function testAllSources(){
+  const btn = document.getElementById('btnTestAll');
   const msg = document.getElementById('setMsg');
-  const el  = document.getElementById(id);
-  msg.style.color='var(--mut)'; msg.innerText='正在测试 '+kind.toUpperCase()+' …';
-  const d = await api('/api/v1/admin/settings_test',{method:'POST',body:JSON.stringify({kind, key: el ? el.value.trim() : ''})});
-  if(!d.success){ msg.style.color='var(--dead)'; msg.innerText=d.error||'测试失败'; return; }
-  const r = d.data;
-  msg.style.color = r.ok ? 'var(--ok)' : 'var(--dead)';
-  msg.innerText = (r.ok?'✓ 可用':'✗ 不可用') + ' · HTTP ' + (r.code||0) + (r.msg ? (' · '+r.msg) : '');
+  if(msg){ msg.style.color='var(--mut)'; msg.innerText='正在依次测试 TMDB / 红果短剧 …（连不上时每个源最多等 10 秒）'; }
+  let ok=0, fail=0;
+  await busy(btn, '测试中…', async ()=>{
+    for(const s of SRCS){
+      const good = await testKey(s.kind, false);
+      if(good) ok++; else fail++;
+    }
+  });
+  if(msg){
+    msg.style.color = (fail===0) ? 'var(--ok)' : (ok>0 ? 'var(--mut)' : 'var(--dead)');
+    msg.innerText += '\n';
+    msg.innerText = '测试完成：' + ok + ' 个可用' + (fail ? ('，' + fail + ' 个不可用（看上方各源后面的说明）') : '，全部连通 ✓');
+  }
+}
+/** 把测试结果同时写回：状态栏小标签 + 数据源行内说明 */
+function setTestState(kind, ok, detail, level){
+  const st = SET_TS[kind] || (SET_TS[kind] = {});
+  st.ok = ok; st.detail = detail;
+  st.label = (ok===null) ? '测试中…' : (ok ? '连通' : '异常');
+  const bar = document.getElementById('st_'+kind);
+  if(bar){ bar.textContent = st.label; bar.className = 'src-'+(level||''); }
+  const ss = document.getElementById('ss_'+kind);
+  if(ss){ ss.textContent = detail || ''; ss.className = 'src-state src-'+(level||''); }
 }
 
 // ===== 安全防护（安装器自锁状态 / 敏感文件暴露面）=====
@@ -1815,8 +2339,8 @@ async function loadSecurity(){
   const g = d.data.guard || {};
   let h = '';
   h += `<div class="ext-note note-ok">
-    🔒 本站已<b>移除网页版安装器</b>：安装相关路径、敏感目录、内部 PHP 文件被直接请求时统一返回 404。
-    不会再出现"未填数据库就提示装好"，别人也无法从网址重装本站或读取环境信息。</div>`;
+    🔒 <b>后台入口已改为「账号 + 密码」登录</b>：不再是"填个令牌就能进"，管理员账号在安装时创建。
+    安装相关路径、敏感目录、内部 PHP 文件被直接请求时统一返回 404。</div>`;
 
   var insPresent = !!g.install_present, insLocked = !!g.install_locked, insActive = !!g.install_active;
   var insDetail = insActive
@@ -1861,8 +2385,7 @@ async function loadSecurity(){
   box.innerHTML = h;
 }
 function openSelfCheck(){
-  const tk = localStorage.getItem('ml_token') || '';
-  window.open(API + '/check.php?token=' + encodeURIComponent(tk), '_blank');
+  window.open(API + '/check.php', '_blank');
 }
 
 // ===== 明暗主题：跟随系统 / 亮色 / 暗色 三态循环，选择记在浏览器本地 =====
@@ -1902,7 +2425,135 @@ if(window.matchMedia){
   }catch(e){}
 }
 
-( async function(){ const t=localStorage.getItem('ml_token'); if(t) document.getElementById('token').value=t; await loadSchema(); } )();
+(async function(){
+  /* 已通过账号登录（PHP 侧已校验），这里只做初始化加载 */
+  try { await loadSchema(); } catch(e) {}
+  loadStats();
+})();
+
+async function loadUsers(page = 1) {
+  const box = document.getElementById('userBox');
+  const q = document.getElementById('userQ')?.value || '';
+  const pager = document.getElementById('userPager');
+  box.innerHTML = '<div class="hint">加载中...</div>';
+  try {
+    const d = await api('/api/v1/admin/user_list?page=' + page + '&q=' + encodeURIComponent(q));
+    if (!d.success) { box.innerHTML = '<div class="err">' + esc(d.error || '加载失败') + '</div>'; return; }
+    const users = d.data.items || [];
+    const total = d.data.total || 0;
+    const ustatus = d.data.ustatus || {};
+    if (users.length === 0) { box.innerHTML = '<div class="hint">暂无用户</div>'; pager.innerHTML = ''; return; }
+    let h = '<table><thead><tr><th>用户名</th><th>邮箱</th><th>角色</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead><tbody>';
+    users.forEach(u => {
+      const statusClass = u.status == 1 ? 'ok' : 'bad';
+      const statusText = u.status == 1 ? '正常' : '禁用';
+      const isAdm = String(u.is_admin) === '1';
+      h += '<tr>'
+        + '<td>' + esc(u.username) + '</td>'
+        + '<td>' + (isAdm ? '-' : esc(u.email || '-')) + '</td>'
+        + '<td>' + (isAdm ? '管理员' : '普通用户') + '</td>'
+        + '<td><span class="pill ' + statusClass + '">' + statusText + '</span></td>'
+        + '<td>' + (u.created_at || '-') + '</td>'
+        + '<td>'
+          + '<button class="ghost sm" onclick="toggleUserStatus(' + u.id + ', ' + (u.status == 1 ? 0 : 1) + ')">' + (u.status == 1 ? '禁用' : '启用') + '</button>'
+          + '<button class="ghost sm" onclick="editUser(' + u.id + ')">编辑</button>'
+          + '<button class="ghost sm bad" onclick="deleteUser(' + u.id + ')">删除</button>'
+        + '</td></tr>';
+    });
+    h += '</tbody></table>';
+    box.innerHTML = h;
+    /* ★ v1.9.4 fix：这里原来写成 meta.total / meta.per_page，而 meta 根本不存在，
+       且与上面的 const total 重复声明 —— 重复 const 会让整段 script 解析失败，
+       直接导致后台所有按钮失效。每页条数以接口为准（30）。 */
+    const totalPages = Math.ceil((d.data.total || 0) / 30);
+    if (totalPages > 1) {
+      let pH = '<nav class="pagination">';
+      if (page > 1) pH += '<button onclick="loadUsers(' + (page - 1) + ')">上一页</button>';
+      for (let i = 1; i <= totalPages; i++) pH += '<button class="' + (i === page ? 'active' : '') + '" onclick="loadUsers(' + i + ')">' + i + '</button>';
+      if (page < totalPages) pH += '<button onclick="loadUsers(' + (page + 1) + ')">下一页</button>';
+      pH += '</nav>';
+      pager.innerHTML = pH;
+    } else { pager.innerHTML = ''; }
+  } catch (e) { box.innerHTML = '<div class="err">加载失败: ' + esc(e.message) + '</div>'; }
+}
+async function toggleUserStatus(id, status) {
+  if (!confirm('确定要' + (status == 1 ? '启用' : '禁用') + '该用户吗？')) return;
+  const d = await api('/api/v1/admin/user_save', 'POST', { id, status });
+  if (!d.success) { alert(d.error || '操作失败'); return; }
+  loadUsers();
+}
+async function editUser(id) {
+  const d = await api('/api/v1/admin/user_list');
+  if (!d.success) { alert('加载失败'); return; }
+  /* ★ v1.9.4 fix：接口返回的字段是 items（原来写成 users，永远找不到人 →「用户不存在」） */
+  const user = (d.data.items || []).find(u => u.id == id);
+  if (!user) { alert('用户不存在'); return; }
+  const isAdm = String(user.is_admin) === '1';
+  const newUsername = prompt('用户名:', user.username);
+  if (newUsername === null) return;
+  /* 管理员的 email 字段存的是系统标记，不当作真实邮箱来改 */
+  let newEmail = '';
+  if (!isAdm) {
+    newEmail = prompt('邮箱:', user.email || '');
+    if (newEmail === null) return;
+  }
+  const isAdmin = confirm('设为管理员？\n（当前：' + (isAdm ? '管理员' : '普通用户') + '）');
+  const payload = { id: id, username: newUsername, is_admin: isAdmin ? 1 : 0 };
+  if (!isAdm) { payload.email = newEmail; }
+  const saveD = await api('/api/v1/admin/user_save', 'POST', payload);
+  if (!saveD.success) { alert(saveD.error || '保存失败'); return; }
+  alert('用户已更新');
+  loadUsers();
+}
+async function deleteUser(id) {
+  if (!confirm('确定要删除该用户吗？此操作不可恢复！')) return;
+  const d = await api('/api/v1/admin/user_del', 'POST', { id });
+  if (!d.success) { alert(d.error || '删除失败'); return; }
+  alert('用户已删除');
+  loadUsers();
+}
+
+// ★ v1.9.0: 自动刮削功能
+function renderScrapePanel() {
+  document.getElementById('scrapeStatus').innerHTML = '<div class="hint">就绪，可点击"开始刮削"</div>';
+}
+
+async function startScrape() {
+  const status = document.getElementById('scrapeStatus');
+  const log = document.getElementById('scrapeLog');
+  const type = document.getElementById('scrapeType').value;
+  const limit = parseInt(document.getElementById('scrapeLimit').value) || 50;
+
+  status.innerHTML = '<div class="hint">正在刮削... 处理 ' + limit + ' 条</div>';
+  log.style.display = 'block';
+  log.innerHTML = '[开始] 类型=' + (type || '全部') + ' 数量=' + limit + '<br>';
+
+  try {
+    const d = await api('/api/v1/item', 'POST', { auto_scrape: true, type: type, limit: limit });
+    if (!d.success) {
+      status.innerHTML = '<div class="err">刮削失败: ' + esc(d.error || '未知错误') + '</div>';
+      log.innerHTML += '[失败] ' + esc(d.error || '未知错误') + '<br>';
+      return;
+    }
+
+    const scraped = d.data.scraped || 0;
+    status.innerHTML = '<div class="ok">✓ 刮削完成！成功补充 ' + scraped + ' 条图片</div>';
+    log.innerHTML += '[完成] 成功 ' + scraped + ' 条<br>';
+
+    if (document.getElementById('tab-items').style.display !== 'none') {
+      loadItems();
+    }
+  } catch (e) {
+    status.innerHTML = '<div class="err">请求失败: ' + esc(e.message) + '</div>';
+    log.innerHTML += '[错误] ' + esc(e.message) + '<br>';
+  }
+}
+
+function clearScrapeResult() {
+  document.getElementById('scrapeStatus').innerHTML = '<div class="hint">就绪</div>';
+  document.getElementById('scrapeLog').style.display = 'none';
+  document.getElementById('scrapeLog').innerHTML = '';
+}
 </script>
 </body>
 </html>

@@ -1,12 +1,64 @@
 ﻿================================================================
   媒资资料库（media-library-api）· 功能说明
-  版本：v1.9.4          更新：2026-09-24
+  版本：v2.1.3          更新：2026-09-24
 ================================================================
 
 【一句话介绍】
   一套自己搭的「影视 / 游戏 / 动漫」资料库：后台自动采集热门条目 →
   前台卡片墙展示 → 可下载、可筛选、能被搜索引擎收录；
   同时对外提供标准 API，可直接对接 ZBLOK 等 WordPress 资源主题。
+
+
+【v2.1.3 新增 · TMDB ⇋ 短剧聚合 跨源联动】
+  短剧侧本身没 rating/vote_count，TMDB 侧没 play_count/episodes —— 正好互补。
+  新增 Core\CrossLink 模块，按标题三级匹配（exact=3 / start=2 / contain=1）双向补齐：
+    ① 短剧 → TMDB：用短剧标题实时查 TMDB，取回 rating/vote_count/genres/overview/poster
+                  只填空字段（rating、vote_count、overview、poster），genres 取并集去重
+                  匹配到的 TMDB 条目完整元信息写进 extra.tmdb_links
+    ② TMDB → 短剧：用 TMDB 标题在本地库搜短剧（不走上游，避免限流）
+                  只把短剧的 play_count/episodes/duration/record_number 挂到 extra
+                  不改 TMDB 主字段（rating/vote_count 保持 TMDB 权威数据）
+    匹配规则：
+      - 标题归一化：去空格 / 中英文标点 / 小写 + 简化版繁→简
+      - min_rating=6.0（避免垃圾匹配，可配置）
+      - MIN_LEN=4（短方 ≥ 4 字符才参与 contain/start 匹配，避免"妈妈"过度匹配）
+  触发时机：
+    - 同步后自动跑（`sync.enable` 且 `crosslink.auto_after_sync`）
+    - 后台手动：POST /api/v1/admin/crosslink/run（支持 ids/limit/force）
+    - 查看配置：GET  /api/v1/admin/crosslink/cfg（含最近 30 条联动明细）
+  配置项（config.php `crosslink` 段，全部可选）：
+    'crosslink' => [
+        'enable'          => 1,       // 总开关
+        'auto_after_sync' => 1,       // 同步后自动跑
+        'batch_size'      => 20,      // 单次最多处理
+        'min_rating'      => 6.0,     // TMDB 侧最小评分门槛
+        'match_level'     => 3,       // 最大匹配级别 1..3
+        'dry_run'         => 0,       // 1 = 演练不写库
+    ],
+
+【v2.1.2 修复 · 短剧聚合适配器重写】
+  老版本用 `?act=recommend/search/new/detail` 参数，上游 orz.icicic.icu 根本不认，
+  每个请求都直接超时——同步跑 0 条是真实的，不是缓存问题。
+  全部换成官方参数：
+    type=days_7_to_date&action=today_new|mj_today_new|aiju_today_new&page=N  今日上新（综合/蜜橘/爱剧）
+    type=rank&selected_items=ranklist_hot_sc|ranklist_hot_all_sc|ranklist_hot_xz  排行榜
+    type=search&name=关键词&page=N&page_size=20                                    搜索
+    type=bookid&book_id=ID                                                        分集
+  关键改动：
+    - rank 嵌套解析：上游返回 {cell_data:[{video_data:[…]}]}，新增 flattenCells() 抽平
+    - duration 双形态：兼容 `"1小时28分钟"` 字符串 与 `8285` 秒数
+    - 分类白名单 + 中文兜底：60+ 主流分类，isKnownGenre 用 `^[\x{4e00}-\x{9fa5}]{2,4}$` 过滤上游乱码
+    - source_id 三级兜底：book_id → vid → series_id
+    - detail 语义改正：`type=bookid` 上游返回的是分集列表（不是书籍元数据），
+      因此 detail 只填 extra.episodes，不覆盖其它字段
+
+【v2.1.1 增强 · TMDB 二次判定】
+  fetchRaw 的 append_to_response 扩到 credits/images/videos/release_dates/recommendations
+  中文 overview 为空自动降级 en-US 兜底
+  normalize 用 primary_release_year 优先、genreMap 中英文映射、从 credits/videos/images
+  提取演员表 / 预告片 / 剧照到 extra
+  detail 权威合并策略：字段无条件覆盖 base（不再用 !empty 保留 0 值）
+  searchRaw 支持 year 过滤（primary_release_year / first_air_date_year）
 
   【v1.8.1 修复】后台「系统设置」三个数据源（TMDB / RAWG / 红果短剧）的连通测试已修好：
   红果短剧（国产短剧）免 Key 源新增「测试连通」按钮（此前该源没有测试入口）；

@@ -11,8 +11,8 @@
 
 CREATE TABLE IF NOT EXISTS `app_users` (
   `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `username`   VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '登录名，2~20 位，全站唯一',
-  `email`      VARCHAR(128) NOT NULL DEFAULT '' COMMENT '选填，便于找回密码与预填联系方式',
+  `username`   VARCHAR(128) NOT NULL DEFAULT '' COMMENT '登录名（v1.8.3 起即注册邮箱），全站唯一',
+  `email`      VARCHAR(128) NOT NULL DEFAULT '' COMMENT '账号邮箱，与 username 一致',
   `pass_hash`  VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'password_hash() 产生的散列，绝不存明文',
   `status`     TINYINT      NOT NULL DEFAULT 1  COMMENT '1=正常 0=禁用 2=待审核',
   `ip`         VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '注册来源 IP，用于「同 IP 一小时最多 3 个」限流',

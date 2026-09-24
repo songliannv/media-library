@@ -7,9 +7,9 @@ USE media_library;
 
 CREATE TABLE IF NOT EXISTS media_items (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  source        VARCHAR(32)  NOT NULL DEFAULT '' COMMENT 'tmdb / rawg / bangumi / manual',
+  source        VARCHAR(32)  NOT NULL DEFAULT '' COMMENT 'tmdb / hongguoduanju / manual',
   source_id     VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '外部源 ID',
-  type          VARCHAR(32)  NOT NULL DEFAULT '' COMMENT 'short / movie / tv / anime / variety / game / person',
+  type          VARCHAR(32)  NOT NULL DEFAULT '' COMMENT 'short / movie / tv / anime / variety / game / book / music / other / person',
   title         VARCHAR(512) NOT NULL DEFAULT '',
   original_title VARCHAR(512) NOT NULL DEFAULT '',
   year          SMALLINT     DEFAULT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS link_checks (
 -- 后台「系统设置」保存的运行时设置（管理员令牌 / API Key / 数据源 / 网盘类型）
 -- 优先级高于 config/config.php：表里有值就用表里的，留空则回退到配置文件。
 CREATE TABLE IF NOT EXISTS app_settings (
-  `k`          VARCHAR(64) NOT NULL COMMENT 'admin_token / tmdb_api_key / rawg_api_key / adapters / pan_types',
+  `k`          VARCHAR(64) NOT NULL COMMENT 'admin_token / tmdb_api_key / / adapters / pan_types',
   `v`          TEXT,
   `updated_at` DATETIME DEFAULT NULL,
   PRIMARY KEY (`k`)
@@ -66,8 +66,8 @@ CREATE TABLE IF NOT EXISTS app_settings (
 -- 前台注册用户（v1.6.2 起；程序首次使用时也会自动创建，这里给出便于手动安装）
 CREATE TABLE IF NOT EXISTS `app_users` (
   `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `username`   VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '登录名，2~20 位，支持中文',
-  `email`      VARCHAR(128) NOT NULL DEFAULT '',
+  `username`   VARCHAR(128) NOT NULL DEFAULT '' COMMENT '登录名（v1.8.3 起即注册邮箱），全站唯一',
+  `email`      VARCHAR(128) NOT NULL DEFAULT '' COMMENT '账号邮箱，与 username 一致',
   `pass_hash`  VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'password_hash() 加盐散列',
   `status`     TINYINT      NOT NULL DEFAULT 1 COMMENT '1=正常 0=禁用 2=待审核',
   `ip`         VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '注册 IP（风控用）',
@@ -106,3 +106,40 @@ CREATE TABLE IF NOT EXISTS `app_requests` (
   KEY `idx_created` (`created_at`),
   KEY `idx_title` (`title`(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资源请求';
+
+-- API 调用令牌（v1.7.0 起；程序首次使用时也会自动创建，这里给出便于手动安装）
+CREATE TABLE IF NOT EXISTS `app_api_tokens` (
+  `id`           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`         VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '令牌名称/用途说明',
+  `token`        VARCHAR(128) NOT NULL DEFAULT '' COMMENT '令牌值',
+  `user_id`      INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '关联注册用户，0=未关联',
+  `status`       TINYINT      NOT NULL DEFAULT 1 COMMENT '1=启用 0=禁用',
+  `daily_limit`  INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '每日调用上限，0=不限',
+  `ip_whitelist` TEXT COMMENT 'IP 白名单，逗号分隔，留空=不限',
+  `usage_count`  INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '累计调用次数',
+  `last_used`    DATETIME     DEFAULT NULL COMMENT '最后调用时间',
+  `created_at`   DATETIME     DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_token` (`token`),
+  KEY `idx_user` (`user_id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='API 调用令牌';
+
+-- API 调用日志（v1.7.0 起）
+CREATE TABLE IF NOT EXISTS `app_api_logs` (
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `token_id`      INT UNSIGNED  NOT NULL DEFAULT 0,
+  `token_name`    VARCHAR(64)   NOT NULL DEFAULT '',
+  `endpoint`      VARCHAR(128)  NOT NULL DEFAULT '',
+  `method`        VARCHAR(10)   NOT NULL DEFAULT 'GET',
+  `params`        TEXT,
+  `ip`            VARCHAR(64)   NOT NULL DEFAULT '',
+  `ua`            VARCHAR(255)  NOT NULL DEFAULT '',
+  `response_code` SMALLINT      NOT NULL DEFAULT 200,
+  `cost_ms`       INT UNSIGNED  NOT NULL DEFAULT 0,
+  `created_at`    DATETIME      DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_token` (`token_id`),
+  KEY `idx_endpoint` (`endpoint`),
+  KEY `idx_created` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='API 调用日志';

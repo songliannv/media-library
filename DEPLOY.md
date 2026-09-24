@@ -9,11 +9,11 @@
 | 项 | 要求 |
 |---|---|
 | 面板 | 宝塔等任意 LNMP 面板 |
-| **PHP** | **5.6 / 7.0 ~ 7.4 / 8.0 ~ 8.2 全部支持**（代码已做全量兼容，未使用 `??`、`fn()`、返回类型声明等 7.0+ 语法） |
-| MySQL | 5.6+（建议 5.7+）。⚠️ 若用 **MySQL 8** 且 PHP < 7.4，请给该库用户使用 `mysql_native_password` 认证，否则 PHP 5.6 连不上 |
+| **PHP** | **8.2+**（推荐 8.3 或 8.4）|
+| MySQL | 5.7+（推荐 8.0+）|
 | 扩展 | `pdo_mysql`（必需）、`curl`（必需）、`json`（必需）、`mbstring`、`openssl` |
 | 目录 | `config/` 与站点根需可写（安装器要写配置、生成器要写 `uisc/`） |
-| Key | TMDB：https://www.themoviedb.org/settings/api ；RAWG（游戏，可选）：https://rawg.io/apidocs ；Bangumi 免 Key |
+| Key | TMDB：https://www.themoviedb.org/settings/api ；RAWG（游戏，可选）：https://rawg.io/apidocs ；红果短剧需配置 |
 
 ---
 
@@ -261,7 +261,7 @@ RedirectMatch 404 ^/(config|sql|cron|core|adapters|tools|data|logs|backup)/
    |---|---|---|
    | TMDB（影视） | `/trending/all/{day\|week}` 官方趋势榜 | `/movie/popular` + `/tv/popular` + 综艺 `discover/tv?with_genres=10764` |
    | RAWG（游戏） | `/games?ordering=-added` 最多人添加 | `/games?ordering=-rating` 评分人气最高 |
-   | Bangumi（动漫） | `/calendar` 当日在播 | `/v0/subjects?type=2&sort=rank` 排行榜（按评分人数排序） |
+   | 红果短剧（国产短剧） | `/calendar` 当日在播 | `/v0/subjects?type=2&sort=rank` 排行榜（按评分人数排序） |
 
 2. **按各源官方要求限流**（这就是"添加限制，对比源站要求"的落地）：
 
@@ -269,7 +269,7 @@ RedirectMatch 404 ^/(config|sql|cron|core|adapters|tools|data|logs|backup)/
    |---|---|---|
    | TMDB | 限流约 50 请求/秒；免费 Key 需署名；单页 20 条 | **300 ms/请求**；每源每次 ≤ 20 条 |
    | RAWG | 免费 20,000 请求/月（≈27/小时）；单页 ≤ 40 条 | **1500 ms/请求**；每源每次 ≤ 20 条 |
-   | Bangumi | 免 Key，但要求自带 UA、建议 ≥1 秒/请求 | **1200 ms/请求**；自动带 UA |
+   | 红果短剧 | 需配置 Base URL，无官方速率限制 | **200 ms/请求**；建议每次 ≤ 50 条 |
 
    另外还有两个硬闸：**单次采集的上游请求总数上限**（默认 8 次）、**每源每次入库条数上限**（默认 20 条）。
 
@@ -327,7 +327,7 @@ RedirectMatch 404 ^/(config|sql|cron|core|adapters|tools|data|logs|backup)/
 php cron/sync_hourly.php --help          # 看全部参数
 php cron/sync_hourly.php --dry           # 只探测接口，不入库（排错首选）
 php cron/sync_hourly.php --force         # 忽略「最小间隔」强制跑一次
-php cron/sync_hourly.php --limit=10 --order=hot --sources=tmdb,bangumi
+php cron/sync_hourly.php --limit=10 --order=hot --sources=tmdb,hongguoduanju
 php cron/sync_hourly.php --quiet         # 只输出一行结果，适合计划任务日志
 ```
 
@@ -364,7 +364,7 @@ php cron/sync_hourly.php --quiet         # 只输出一行结果，适合计划�
 | 后台管理令牌 admin.token | 登录后台用。旁边有「随机生成」；改完点保存，本页会自动切到新令牌。 |
 | TMDB API Key | 影视 / 短剧 / 电视剧采集用。旁边有「测试连通」，直接告诉你 Key 是否可用。 |
 | RAWG API Key | 游戏采集用。同样可「测试连通」。 |
-| 启用哪些数据源 | TMDB / RAWG / Bangumi 勾选（至少一个）。决定「同步热门」跑哪些源。 |
+| 启用哪些数据源 | TMDB / RAWG / 红果短剧 勾选（至少一个）。决定「同步热门」跑哪些源。 |
 | 网盘类型 | 点「添加」逐个加（如 `123网盘`），点 chip 上的 `×` 删除；「恢复默认」一键回到夸克/迅雷/光鸭/百度/UC。 |
 
 ### 存哪里、优先级怎么算
@@ -387,7 +387,7 @@ php cron/sync_hourly.php --quiet         # 只输出一行结果，适合计划�
 | GET | `/api/v1/admin/settings` | 读取当前设置（含「生效值 / 后台覆盖值 / 配置文件里的值」） |
 | POST | `/api/v1/admin/settings` | 保存设置 |
 | POST | `/api/v1/admin/settings_reset` | 传 `{key}` 清单项、`{all:1}` 清全部覆盖 |
-| POST | `/api/v1/admin/settings_test` | 传 `{kind:"tmdb"/"rawg"/"bangumi", key?}` 探测上游是否可用 |
+| POST | `/api/v1/admin/settings_test` | 传 `{kind:"tmdb"/"rawg"/"hongguoduanju", key?}` 探测上游是否可用 |
 | GET | `/api/v1/admin/security` | 读取安全防护状态（安装器是否已移除、目录拒访、守卫覆盖率），后台「安全防护」页用 |
 | GET | `/api/v1/admin/sync_plan` | 采集参数 + 各源官方限制对照 + 最近采集记录 + 计划任务命令（后台「同步采集」页用） |
 | POST | `/api/v1/admin/sync` | 执行一次采集。body 可带 `{force:1, dry:1, limit, window, order, sources, build}` |
@@ -430,20 +430,6 @@ php cron/sync_hourly.php --quiet         # 只输出一行结果，适合计划�
 ---
 
 ## 十四、PHP 版本兼容性
-
-本版本已做 **PHP 5.6 → 8.2 全量语法降级**，不再要求 7.0+：
-
-| 曾使用的 7.0+ 语法 | 现在的写法 |
-|---|---|
-| `$a['k'] ?? $d`（空合并，7.0+） | `isset($a['k']) ? $a['k'] : $d` |
-| `fn($x) => ...`（箭头函数，7.4+） | `function ($x) { return ...; }` |
-| `function f(): array`（返回类型，7.0+） | 去掉返回类型 |
-| `function f(string $s)`（标量参数类型） | 去掉标量类型提示（保留 `array` 类提示） |
-| `public const X`（常量可见性，7.1+） | `const X` |
-| `catch (\Throwable $e)`（7.0+） | `catch (\Exception $e)` |
-| `random_bytes()`（7.0+） | `substr(md5(uniqid('', true)), 0, 6)` |
-
-**换成 PHP 5.6 后请注意**：`exec` 常被禁用（`check.php` 会跳过 `php -l` 检查项）；MySQL 8 需用 `mysql_native_password` 认证；`mbstring`/`openssl` 建议安装。
 
 ---
 
@@ -715,7 +701,7 @@ curl http://127.0.0.1:8888/api/health
 
 ## 十八、常见问题
 
-- **Parse error: unexpected '=>' / '??' 之类的语法错误**：说明站点 PHP 版本与代码不匹配。v1.2.0 起已全量兼容 5.6~8.2，请确认覆盖上传了**全部**文件（尤其 `core/`、`api/`），并清一次 opcache / 重启 PHP。
+- **Parse error: unexpected '=>' / '??' 之类的语法错误**：说明站点 PHP 版本与代码不匹配。v1.9.6 起仅支持 PHP 8.2+，请确认站点 PHP 版本 ≥ 8.2 并覆盖上传了**全部**文件（尤其 `core/`、`api/`），并清一次 opcache / 重启 PHP。
 - **访问 `/admin` 或 `/api/v1/*` 返回 404**：伪静态没配。见第四节，`location / { try_files $uri $uri/ /index.php?$query_string; }`。
 - **502 / 空白**：检查 PHP 是否开启 `curl`、`pdo_mysql`；看站点错误日志。
 - **返回 401**：后台接口需带 `X-Admin-Token: 你的token`。

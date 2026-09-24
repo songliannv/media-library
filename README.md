@@ -3,10 +3,10 @@
 **影视 / 游戏 / 动漫 资料库服务** —— 对外提供 **TMDB 兼容代理** + **统一 API**，
 自带**可视化后台**，部署在宝塔面板（Nginx + PHP + MySQL）。
 
-当前版本：**v1.9.4**（2026-09-24）　·　兼容 **PHP 5.6 ~ 8.2**　·　零框架依赖（纯 PHP）
+当前版本：**v2.1.3**（2026-09-24）　·　兼容 **PHP 8.2+**　·　零框架依赖（纯 PHP）
 
 > **关于本仓库与本地归档**
-> - 本仓库是**源码快照**，仓库内源码为 **v1.6.4**；开发主线已到 **v1.9.4**，
+> - 本仓库是**源码快照**，仓库内源码为 **v2.1.3**；
 >   最新明文源码在本地五目录归档的 `原始源码/`（唯一改动来源）。
 > - 本地归档按 **原始源码 / 发布版本 / 发布包 / 升级包 / 软件素材** 五类存放，
 >   **一律不套项目名子目录**，文件直接放在目录下。
@@ -62,7 +62,7 @@ git clone -b source https://github.com/songliannv/media-library.git
 ## 功能速览
 
 - **API**：TMDB 兼容代理（ZBLOK 等主题零改动对接）+ 统一 API（跨源搜索 / 列表 / 详情）
-- **数据源**：TMDB（影视）、RAWG（游戏）、**红果短剧**（国产短剧，免 Key），可扩展
+- **数据源**：TMDB（影视）、RAWG（游戏）、**短剧聚合**（番茄 / 红果 / 蜜橘 / 爱剧 / 悟空 / 常读 / 西瓜，免 Key），可扩展
 - **9 大分类**：短剧 / 电影 / 电视剧 / 动漫 / 综艺 / 游戏 / 书籍 / 音乐 / 其他
 - **前台**：卡片墙 + 4 种排序 + 分类筛选 + 分页；静态内页 `/uisc/{id}.html`
 - **网盘下载**：夸克 / 迅雷 / 光鸭 / 百度 / UC，后台可视化增删；**下载区仅在填了链接时显示**
@@ -71,6 +71,9 @@ git clone -b source https://github.com/songliannv/media-library.git
 - **SEO**：动态 `/robots.txt`、`/sitemap.xml` + 三种上下文标题模板 + 统计代码
 - **采集引擎**：只取「最热 / 最多人看」，按各源官方要求限流，重复自动跳过；
   支持**每小时计划任务**与 **PanSou 自动补网盘地址**
+- **跨源联动（v2.1.3 新增）**：短剧与 TMDB 按标题三级匹配（exact / start / contain），
+  短剧侧用 TMDB 的 rating/vote_count/genres/overview 填空，TMDB 侧把短剧的 play_count/episodes 挂进 extra；
+  同步后自动跑或后台手动触发，`dry_run` 模式先看效果再落地
 - **注册与资源请求**：注册 / 登录 / 退出 + `/request` 资源请求页，后台可处理与回复（带风控）
 - **安全**：网页安装器**带自锁**、敏感目录恒 404、内部文件反直访、后台令牌、CSRF、恒时比较
 - **响应式**：手机 / 平板 / 大屏六档断点，跟随系统深浅色
@@ -88,8 +91,8 @@ git clone -b source https://github.com/songliannv/media-library.git
 ├── DEPLOY.md            部署文档（伪静态 / 安全加固 / 采集 / FAQ）
 ├── admin/               后台单页
 ├── api/                 统一 API + TMDB 兼容代理
-├── core/                内核（Guard 守卫 / Installer 安装内核 / Sync 采集 / Site / PanSou / User …）
-├── adapters/            数据源适配器（Tmdb / Rawg / HongguoDuanju 红果短剧）
+├── core/                内核（Guard 守卫 / Installer 安装内核 / Sync 采集 / Site / PanSou / User / CrossLink 跨源联动 …）
+├── adapters/            数据源适配器（Tmdb / HongguoDuanju 短剧聚合）
 ├── cron/                计划任务（每小时采集 / 每日趋势 / 重建静态页）
 ├── config/              config.sample.php、pan_types.php（运行时 config.php 由安装器生成）
 ├── sql/                 install.sql + migrate_*.sql
@@ -103,6 +106,6 @@ git clone -b source https://github.com/songliannv/media-library.git
 
 见源码内 `index.php` 的 `ML_APP_VERSION`。
 
-- 本地开发主线：**v1.9.4**（2026-09-24，在 `原始源码/`）
-- 本仓库快照：**v1.6.4**
-- 完整版本变更记录见 `发布版本/CHANGELOG.md`（本地归档）。
+- 本地开发主线：**v2.1.3**（2026-09-24，在 `原始源码/`）
+- 本仓库快照：**v2.1.3**
+- 完整版本变更记录见 `CHANGELOG.md`（本仓库根目录，随发布版本同步）
