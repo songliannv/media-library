@@ -3,7 +3,19 @@
 **影视 / 游戏 / 动漫 资料库服务** —— 对外提供 **TMDB 兼容代理** + **统一 API**，
 自带**可视化后台**，部署在宝塔面板（Nginx + PHP + MySQL）。
 
-当前版本：**v1.6.3**　·　兼容 **PHP 5.6 ~ 8.2**　·　零框架依赖（纯 PHP）
+当前版本：**v1.9.4**（2026-09-24）　·　兼容 **PHP 5.6 ~ 8.2**　·　零框架依赖（纯 PHP）
+
+> **关于本仓库与本地归档**
+> - 本仓库是**源码快照**，仓库内源码为 **v1.6.4**；开发主线已到 **v1.9.4**，
+>   最新明文源码在本地五目录归档的 `原始源码/`（唯一改动来源）。
+> - 本地归档按 **原始源码 / 发布版本 / 发布包 / 升级包 / 软件素材** 五类存放，
+>   **一律不套项目名子目录**，文件直接放在目录下。
+> - **发布版本（`发布版本/`、`发布包/`、`升级包/`）的三条规则**（长期有效）：
+>   ① **不含任何测试 / 诊断脚本**（`__diag.php`、`__emergency_reset.php`、`__migrate_189.php`、`check.php`
+>   都在 `软件素材/`，需要时单独上传、用完即删）；
+>   ② **PHP 全部经过免费防破解混淆**（去注释 + 压缩 + 局部变量改名；
+>   类名 / 函数名 / 方法名 / 常量 / 字符串 / 类属性名不动）；
+>   ③ **明文 → 混淆只能全量覆盖升级**，不能逐文件增量。
 
 ---
 
@@ -40,7 +52,8 @@ git clone -b source https://github.com/songliannv/media-library.git
      **装完自动 404**，别人无法借它重装你的站。
    - **命令行**：在宝塔「终端」执行 `php tools/install-cli.php`。
 
-装好后访问 `check.php?token=你的后台令牌` 做一次完整体检。
+装好后做一次完整体检：把 `check.php` 传到站点根，访问 `/check.php`
+（**管理员登录态**访问，或从服务器本机访问；未授权一律 404；**看完删掉**）。
 
 详细步骤见 **[安装说明.txt](安装说明.txt)**，功能清单见 **[功能说明.txt](功能说明.txt)**。
 
@@ -49,8 +62,8 @@ git clone -b source https://github.com/songliannv/media-library.git
 ## 功能速览
 
 - **API**：TMDB 兼容代理（ZBLOK 等主题零改动对接）+ 统一 API（跨源搜索 / 列表 / 详情）
-- **数据源**：TMDB（影视）、RAWG（游戏）、Bangumi（动漫），可扩展
-- **6 大分类**：短剧 / 电影 / 电视剧 / 动漫 / 综艺 / 游戏
+- **数据源**：TMDB（影视）、RAWG（游戏）、**红果短剧**（国产短剧，免 Key），可扩展
+- **9 大分类**：短剧 / 电影 / 电视剧 / 动漫 / 综艺 / 游戏 / 书籍 / 音乐 / 其他
 - **前台**：卡片墙 + 4 种排序 + 分类筛选 + 分页；静态内页 `/uisc/{id}.html`
 - **网盘下载**：夸克 / 迅雷 / 光鸭 / 百度 / UC，后台可视化增删；**下载区仅在填了链接时显示**
 - **后台**：内容增删改 + **下载链接失效检查** + 系统设置 + 站点设置 + 安全防护 + 同步采集 + 重建静态页
@@ -71,12 +84,12 @@ git clone -b source https://github.com/songliannv/media-library.git
 ├── install.php          网页安装器（带自锁，仅"未安装"时可用）
 ├── user.php             前台账号 + 资源请求控制器
 ├── home.php / track.php 主页 / 计数端点
-├── check.php            一键环境自检（11 组，需令牌）
+├── check.php            一键环境自检（11 组，管理员登录态；不随发布版本分发）
 ├── DEPLOY.md            部署文档（伪静态 / 安全加固 / 采集 / FAQ）
 ├── admin/               后台单页
 ├── api/                 统一 API + TMDB 兼容代理
 ├── core/                内核（Guard 守卫 / Installer 安装内核 / Sync 采集 / Site / PanSou / User …）
-├── adapters/            数据源适配器（Tmdb / Rawg / Bangumi）
+├── adapters/            数据源适配器（Tmdb / Rawg / HongguoDuanju 红果短剧）
 ├── cron/                计划任务（每小时采集 / 每日趋势 / 重建静态页）
 ├── config/              config.sample.php、pan_types.php（运行时 config.php 由安装器生成）
 ├── sql/                 install.sql + migrate_*.sql
@@ -88,5 +101,8 @@ git clone -b source https://github.com/songliannv/media-library.git
 
 ## 版本
 
-见源码内 `index.php` 的 `ML_APP_VERSION`（当前 **v1.6.3**，2026-09-22）。
-历史版本变更记录随发布包提供，源码仓库只保留最新版。
+见源码内 `index.php` 的 `ML_APP_VERSION`。
+
+- 本地开发主线：**v1.9.4**（2026-09-24，在 `原始源码/`）
+- 本仓库快照：**v1.6.4**
+- 完整版本变更记录见 `发布版本/CHANGELOG.md`（本地归档）。
