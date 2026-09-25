@@ -1,5 +1,5 @@
 <?php
-use Core\Config;use Core\User;if(!defined('ML_APP')){define('ML_APP',true);}if(!defined('ML_ROOT')){define('ML_ROOT',dirname(__DIR__));}if(!defined('ML_APP_VERSION')){define('ML_APP_VERSION','3.1.5');}header('Content-Type: text/html; charset=utf-8');header('X-Robots-Tag: noindex, nofollow');require_once __DIR__.'/../core/Guard.php';ml_guard_shield(__FILE__);require_once __DIR__.'/../core/Session.php';require_once __DIR__.'/../core/DB.php';require_once __DIR__.'/../core/Config.php';require_once __DIR__.'/../core/User.php';$a=ml_session_boot(User::SESS);function ml_ad_csrf(){if(empty($_SESSION['ml_ad_csrf'])){$_SESSION['ml_ad_csrf']=bin2hex(random_bytes(32));}return(string)$_SESSION['ml_ad_csrf'];}$b=trim((string)Config::sub('admin','dir','admin'),'/');if($b===''||!preg_match('/^[A-Za-z0-9_-]+$/',$b)||substr($b,-5)!=='admin'){$b='admin';}$c='/'.$b.'/';$d='';$e='';$f='';$g=isset($_POST['ad_do'])?(string)$_POST['ad_do']:'';if($g===''&&isset($_POST['u'],$_POST['p'])){$g='login';}if($g==='login'){$f='user';if(!$a){$d='服务器无法保存登录会话（session 不可写），所以登不上去。'.'请打开 check.php 看「会话」一栏，或让服务商把 PHP 的 session.save_path 目录设为可写。';}elseif(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期（登录会话没保持住），请再提交一次；若反复如此，请打开 check.php 看「会话」一栏。';}elseif(isset($_POST['ml_hp'])&&trim((string)$_POST['ml_hp'])!==''){$d='检测到异常提交，已忽略。';}else{$h=isset($_POST['u'])?(string)$_POST['u']:'';$i=isset($_POST['p'])?(string)$_POST['p']:'';$j=User::login($h,$i);if(!empty($j['ok'])){if(User::isAdmin()){header('Location: '.$c);exit;}User::logout();$d='该账号不是管理员，无法进入后台。';}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='forgot'){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::requestReset(isset($_POST['account'])?(string)$_POST['account']:'','admin');if(!empty($j['ok'])){$e=(string)$j['msg'];}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='reset'){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::doReset(isset($_POST['token'])?(string)$_POST['token']:'',isset($_POST['new'])?(string)$_POST['new']:'',isset($_POST['new2'])?(string)$_POST['new2']:'');if(!empty($j['ok'])){$e=(string)$j['msg'].' 请用新密码登录。';}else{$d=(string)$j['msg'];}}}if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['logout'])){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{User::logout();header('Location: '.$c);exit;}}$k=User::me();if(!$k||!User::isAdmin()){$l='login';$m='';if(isset($_GET['reset'])){$l='reset';$m=(string)$_GET['reset'];}elseif(isset($_GET['forgot'])){$l='forgot';}if($e!==''&&$l==='reset'){$l='login';}$n=($l==='reset')?(User::verifyResetToken($m)!==null):false;?><!DOCTYPE html>
+use Core\Config;use Core\User;if(!defined('ML_APP')){define('ML_APP',true);}if(!defined('ML_ROOT')){define('ML_ROOT',dirname(__DIR__));}if(!defined('ML_APP_VERSION')){define('ML_APP_VERSION','3.1.6');}header('Content-Type: text/html; charset=utf-8');header('X-Robots-Tag: noindex, nofollow');require_once __DIR__.'/../core/Guard.php';ml_guard_shield(__FILE__);require_once __DIR__.'/../core/Session.php';require_once __DIR__.'/../core/DB.php';require_once __DIR__.'/../core/Config.php';require_once __DIR__.'/../core/User.php';$a=ml_session_boot(User::SESS);function ml_ad_csrf(){if(empty($_SESSION['ml_ad_csrf'])){$_SESSION['ml_ad_csrf']=bin2hex(random_bytes(32));}return(string)$_SESSION['ml_ad_csrf'];}$b=trim((string)Config::sub('admin','dir','admin'),'/');if($b===''||!preg_match('/^[A-Za-z0-9_-]+$/',$b)||substr($b,-5)!=='admin'){$b='admin';}$c='/'.$b.'/';$d='';$e='';$f='';$g=isset($_POST['ad_do'])?(string)$_POST['ad_do']:'';if($g===''&&isset($_POST['u'],$_POST['p'])){$g='login';}if($g==='login'){$f='user';if(!$a){$d='服务器无法保存登录会话（session 不可写），所以登不上去。'.'请打开 check.php 看「会话」一栏，或让服务商把 PHP 的 session.save_path 目录设为可写。';}elseif(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期（登录会话没保持住），请再提交一次；若反复如此，请打开 check.php 看「会话」一栏。';}elseif(isset($_POST['ml_hp'])&&trim((string)$_POST['ml_hp'])!==''){$d='检测到异常提交，已忽略。';}else{$h=isset($_POST['u'])?(string)$_POST['u']:'';$i=isset($_POST['p'])?(string)$_POST['p']:'';$j=User::login($h,$i);if(!empty($j['ok'])){if(User::isAdmin()){header('Location: '.$c);exit;}User::logout();$d='该账号不是管理员，无法进入后台。';}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='forgot'){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::requestReset(isset($_POST['account'])?(string)$_POST['account']:'','admin');if(!empty($j['ok'])){$e=(string)$j['msg'];}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='reset'){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::doReset(isset($_POST['token'])?(string)$_POST['token']:'',isset($_POST['new'])?(string)$_POST['new']:'',isset($_POST['new2'])?(string)$_POST['new2']:'');if(!empty($j['ok'])){$e=(string)$j['msg'].' 请用新密码登录。';}else{$d=(string)$j['msg'];}}}if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['logout'])){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{User::logout();header('Location: '.$c);exit;}}$k=User::me();if(!$k||!User::isAdmin()){$l='login';$m='';if(isset($_GET['reset'])){$l='reset';$m=(string)$_GET['reset'];}elseif(isset($_GET['forgot'])){$l='forgot';}if($e!==''&&$l==='reset'){$l='login';}$n=($l==='reset')?(User::verifyResetToken($m)!==null):false;?><!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -293,6 +293,13 @@ exit;}?>
 #tab-local .lpv:has(table){background:var(--card);border:1px solid var(--line);border-radius:14px;padding:2px 14px 8px;overflow-x:auto}
 #tab-local .lpv .lpv-title{font-size:12.5px;font-weight:700;color:var(--pri);padding:10px 2px 4px}
 #tab-local .lpv table{margin:0 0 8px}
+/* --- 自动刮削页（v3.1.6 美化：复用本地导入页控件风格 + 终端风日志） --- */
+#tab-scrape select{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt);font-size:14px;outline:none;cursor:pointer;transition:.15s;width:100%;box-sizing:border-box}
+#tab-scrape input[type=number]{width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt);font-size:14px;outline:none;transition:.15s;font-family:inherit}
+#tab-scrape select:focus,#tab-scrape input[type=number]:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(91,91,214,.13)}
+.scrape-log{margin-top:14px;max-height:300px;overflow-y:auto;font:12.5px/1.9 ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;background:#0f172a;color:#cbd5e1;padding:14px 16px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.scrape-log b{color:#7dd3fc;font-weight:600}
+:root[data-theme=dark] .scrape-log{background:#0b1120;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
 .pan-card-link{color:var(--pri);font-size:11.5px;text-decoration:none;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);transition:.15s;display:inline-flex;align-items:center;gap:4px}
 .pan-card-link:hover{border-color:var(--pri);background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff}
 :root[data-theme=dark] .pan-card-link{background:rgba(91,91,214,.08)}
@@ -754,33 +761,37 @@ table{min-width:auto;max-width:100%}
 
   <div id="tab-scrape" class="tabpane" style="display:none">
     <div class="card">
-      <h2>自动刮削</h2>
-      <p class="hint">自动从 TMDB 补充缺失的海报和背景图</p>
-      <div class="form-row">
-        <label>类型筛选：</label>
-        <select id="scrapeType">
-          <option value="">全部</option>
-          <option value="movie">电影</option>
-          <option value="tv">电视剧</option>
-          <option value="anime">动漫</option>
-          <option value="short">短剧</option>
-          <option value="variety">综艺</option>
-          <option value="game">游戏</option>
-          <option value="book">书籍</option>
-          <option value="music">音乐</option>
-          <option value="other">其他</option>
-        </select>
+      <h2>🎬 自动刮削</h2>
+      <p class="hint">自动从 TMDB 补充缺失的海报和背景图，让资料列表更完整好看。</p>
+      <div class="local-sub">
+        <div class="local-2col">
+          <div class="form-row" style="margin:0">
+            <label>类型筛选</label>
+            <select id="scrapeType">
+              <option value="">全部</option>
+              <option value="movie">电影</option>
+              <option value="tv">电视剧</option>
+              <option value="anime">动漫</option>
+              <option value="short">短剧</option>
+              <option value="variety">综艺</option>
+              <option value="game">游戏</option>
+              <option value="book">书籍</option>
+              <option value="music">音乐</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          <div class="form-row" style="margin:0">
+            <label>每次处理数量（10 ~ 500）</label>
+            <input type="number" id="scrapeLimit" value="50" min="10" max="500">
+          </div>
+        </div>
+        <div class="local-actions">
+          <button id="scrapeGo" onclick="startScrape()">▶ 开始刮削</button>
+          <button class="ghost" onclick="clearScrapeResult()">清除结果</button>
+        </div>
+        <div id="scrapeStatus" class="scrape-status"></div>
       </div>
-      <div class="form-row">
-        <label>每次处理数量：</label>
-        <input type="number" id="scrapeLimit" value="50" min="10" max="500" style="width:100px">
-      </div>
-      <div class="form-row" style="margin-top:16px">
-        <button onclick="startScrape()">开始刮削</button>
-        <button class="ghost" onclick="clearScrapeResult()">清除结果</button>
-      </div>
-      <div id="scrapeStatus" style="margin-top:16px"></div>
-      <div id="scrapeLog" style="margin-top:8px;max-height:300px;overflow-y:auto;font-family:monospace;font-size:12px;background:#f5f5f5;padding:8px;border-radius:4px;display:none"></div>
+      <div id="scrapeLog" class="scrape-log" style="display:none"></div>
     </div>
   </div>
   <div id="tab-local" class="tabpane" style="display:none">
@@ -2829,46 +2840,51 @@ async function deleteUser(id) {
   loadUsers();
 }
 
-// ★ v1.9.0: 自动刮削功能
+// ★ v1.9.0: 自动刮削功能（v3.1.6 美化状态提示与日志）
 function renderScrapePanel() {
-  document.getElementById('scrapeStatus').innerHTML = '<div class="hint">就绪，可点击"开始刮削"</div>';
+  document.getElementById('scrapeStatus').innerHTML = '<div class="ext-note">💤 就绪 · 选好类型和数量后点「开始刮削」</div>';
 }
 
 async function startScrape() {
   const status = document.getElementById('scrapeStatus');
   const log = document.getElementById('scrapeLog');
+  const btn = document.getElementById('scrapeGo');
   const type = document.getElementById('scrapeType').value;
   const limit = parseInt(document.getElementById('scrapeLimit').value) || 50;
 
-  status.innerHTML = '<div class="hint">正在刮削... 处理 ' + limit + ' 条</div>';
+  btn.disabled = true;
+  status.innerHTML = '<div class="ext-note note-warn">⏳ 正在刮削… 本次处理 ' + limit + ' 条，请勿关闭页面</div>';
   log.style.display = 'block';
-  log.innerHTML = '[开始] 类型=' + (type || '全部') + ' 数量=' + limit + '<br>';
+  log.innerHTML = '<b>[开始]</b> 类型=' + (type || '全部') + ' · 数量=' + limit + '<br>';
 
   try {
     const d = await api('/api/v1/item', {method:'POST', body:JSON.stringify({auto_scrape:true, type:type, limit:limit})});
     if (!d.success) {
-      status.innerHTML = '<div class="err">刮削失败: ' + esc(d.error || '未知错误') + '</div>';
-      log.innerHTML += '[失败] ' + esc(d.error || '未知错误') + '<br>';
+      status.innerHTML = '<div class="ext-note note-err">✗ 刮削失败：' + esc(d.error || '未知错误') + '</div>';
+      log.innerHTML += '<b>[失败]</b> ' + esc(d.error || '未知错误') + '<br>';
       return;
     }
 
     const scraped = d.data.scraped || 0;
-    status.innerHTML = '<div class="ok">✓ 刮削完成！成功补充 ' + scraped + ' 条图片</div>';
-    log.innerHTML += '[完成] 成功 ' + scraped + ' 条<br>';
+    status.innerHTML = '<div class="ext-note note-ok">✓ 刮削完成！成功补充 ' + scraped + ' 张图片</div>';
+    log.innerHTML += '<b>[完成]</b> 成功 ' + scraped + ' 条<br>';
 
     if (document.getElementById('tab-items').style.display !== 'none') {
       loadItems();
     }
   } catch (e) {
-    status.innerHTML = '<div class="err">请求失败: ' + esc(e.message) + '</div>';
-    log.innerHTML += '[错误] ' + esc(e.message) + '<br>';
+    status.innerHTML = '<div class="ext-note note-err">✗ 请求失败：' + esc(e.message) + '</div>';
+    log.innerHTML += '<b>[错误]</b> ' + esc(e.message) + '<br>';
+  } finally {
+    btn.disabled = false;
   }
 }
 
 function clearScrapeResult() {
-  document.getElementById('scrapeStatus').innerHTML = '<div class="hint">就绪</div>';
-  document.getElementById('scrapeLog').style.display = 'none';
-  document.getElementById('scrapeLog').innerHTML = '';
+  document.getElementById('scrapeStatus').innerHTML = '<div class="ext-note">💤 就绪</div>';
+  const log = document.getElementById('scrapeLog');
+  log.style.display = 'none';
+  log.innerHTML = '';
 }
 
 /* ============ 本地资源导入（v3.1.2） ============ */
