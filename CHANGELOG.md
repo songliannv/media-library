@@ -1,5 +1,29 @@
 # 版本记录 · media-library-api
 
+## v3.1.4（2026-09-25）
+
+- **新增 · 网盘扫码登录**（后台「系统设置 → 接口配置」）：
+  - 夸克 / UC / 百度 / 阿里 四张 Cookie 卡片新增「📱 扫码登录」按钮，
+    弹窗出二维码（每 2.5s 轮询状态）→ 对应 App 扫码确认 → 服务端换取凭据自动回填 Cookie 框
+  - 协议（公开逆向，多方开源验证）：夸克 `uop.quark.cn`（client_id=532）、
+    UC `api.open.uc.cn`（client_id=381）、百度 `passport.baidu.com` getqrcode→unicast→qrbdusslogin、
+    阿里 `passport.aliyundrive.com` generate.do→query.do（bizExt 解码取 accessToken/refreshToken）
+  - 新建 `core/PanQr.php`（纯 PHP curl + 临时 cookie jar，用后即删；不引第三方服务）
+  - `api/unified.php` 新增 `pan_qr_create` / `pan_qr_poll` 两个 admin 端点（鉴权 + CSRF）
+  - `admin/index.php` 内嵌 qrcode.min.js（MIT，本地生成二维码，无 CDN 依赖）+ 扫码弹窗与轮询 JS
+  - 迅雷（设备签名协议、易失效）/ 光鸭（无公开协议）保留手动粘贴；四家的手动入口也保留
+  - 不改数据库、不改前台
+
+修改文件清单：
+
+```
+core/PanQr.php（新增）     core/Settings.php         api/unified.php
+admin/index.php            index.php                 install.php
+功能说明.txt                安装说明.txt               README.md
+.workbuddy/build_release_194.py
+```
+
+
 ## v3.1.3（2026-09-25）
 
 - **修复 · 前台三处展示问题**（用户截图反馈）：
