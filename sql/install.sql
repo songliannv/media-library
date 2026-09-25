@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS media_items (
   KEY idx_type (type),
   KEY idx_title (title(191)),
   KEY idx_year (year),
-  KEY idx_rating (rating)
+  KEY idx_rating (rating),
+  KEY idx_clicks (clicks),
+  KEY idx_updated_at (updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS sync_log (
@@ -40,7 +42,8 @@ CREATE TABLE IF NOT EXISTS sync_log (
   detail     TEXT,
   items      INT DEFAULT 0,
   created_at DATETIME DEFAULT NULL,
-  KEY idx_task (task)
+  KEY idx_task (task),
+  KEY idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS link_checks (
@@ -81,7 +84,8 @@ CREATE TABLE IF NOT EXISTS `app_users` (
   UNIQUE KEY `uq_username` (`username`),
   KEY `idx_email` (`email`),
   KEY `idx_status` (`status`),
-  KEY `idx_created` (`created_at`)
+  KEY `idx_created` (`created_at`),
+  KEY `idx_lock` (`status`, `fail_count`, `lock_until`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='前台注册用户';
 
 -- 资源请求（求片区，v1.6.2 起）
@@ -117,6 +121,8 @@ CREATE TABLE IF NOT EXISTS `app_api_tokens` (
   `daily_limit`  INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '每日调用上限，0=不限',
   `ip_whitelist` TEXT COMMENT 'IP 白名单，逗号分隔，留空=不限',
   `usage_count`  INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '累计调用次数',
+  `daily_count`  INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '今日已预占次数',
+  `daily_date`   DATE         DEFAULT NULL COMMENT '预占计数日期',
   `last_used`    DATETIME     DEFAULT NULL COMMENT '最后调用时间',
   `created_at`   DATETIME     DEFAULT NULL,
   PRIMARY KEY (`id`),

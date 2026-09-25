@@ -1,5 +1,66 @@
 # 版本记录 · media-library-api
 
+## v3.1.1（2026-09-26）
+
+- **运行基线收紧为 PHP 8.2+，移除全部旧版兼容**（本次主线改动）
+  - 随机安全相关全部改用 PHP 8.2 原生 API，删掉 `mt_rand()` /
+    `openssl_random_pseudo_bytes()` 回退：
+    - `core/User.php`：`User::rand()` 改 `bin2hex(random_bytes($bytes))`，
+      验证码 `random_int()`，CIDR 字节换算恢复 `intdiv($bits, 8)`
+    - `core/ApiToken.php`：`randToken()` 改 `bin2hex(random_bytes(24))`
+    - `core/Installer.php`：安装令牌 `substr(bin2hex(random_bytes(16)),0,16)`，
+      盐值生成用 `random_int()`
+    - `core/CacheStore.php`：缓存键随机后缀用 `random_int()`
+    - `admin/index.php`：后台 CSRF 直接 `bin2hex(random_bytes(32))`
+    - `core/Mail.php`：邮件边界标识改用 `bin2hex(random_bytes(16))`
+    - `check.php`：自检里的随机样例改用 `bin2hex(random_bytes(...))`
+  - 异常兜底统一为 `\Throwable`（原 `\Exception`），运行时错误也能进 JSON / 日志兜底
+  - `core/Session.php`：`session_set_cookie_params()` 只保留 PHP 7.3+ 数组写法
+  - 清理全部「兼容 PHP 5.6」注释与说明，文档统一到 PHP 8.2 基线
+- **文档同步**：`安装说明.txt`、`功能说明.txt`、`DEPLOY.md` 更新 PHP 版本要求，
+  并补「发布保护边界」：当前发布目录是 AST 混淆版，不是 ionCube / SourceGuardian
+  编码加密版；真正编码保护需编码器 + 宝塔 PHP 8.2 的 FPM/CLI Loader
+- **构建门槛**：`.workbuddy/build_release_194.py` 增加保护模式标记，
+  `ML_REQUIRE_PHP_ENCODER=1` 时若未接入真正的 PHP 编码器会直接阻断打包，
+  避免把混淆包当加密包交付
+
+修改文件清单：
+
+```
+core/User.php             core/ApiToken.php        core/Installer.php
+core/Session.php          core/CacheStore.php      core/Mail.php
+admin/index.php           check.php                install.php
+安装说明.txt               功能说明.txt                DEPLOY.md
+.workbuddy/build_release_194.py
+```
+
+## v3.1.0（2026-09-26）
+
+- **稳定性 / 性能 / 安全优化**（上一轮）
+  - API：`api/unified.php` 统一 page(1~10000) / per(1~100) / 搜索词 ≤200 /
+    标签 ≤100 边界；API 日志对 query 里的 token 脱敏；
+    `core/Json.php` 增加 `json_encode` 失败兜底，
+    CORS 允许头补 `X-Api-Token`
+  - 安全：`core/ApiToken.php` 列表不再返回完整 token，只给不可逆预览
+    `token_preview`；数据库连接加 `PDO::ATTR_TIMEOUT => 6`
+  - 缓存：`core/CacheStore.php` 写/改/删后递增标签缓存版本号，
+    解决标签更新不生效，同时避免误删共享 cache 里的其他模块缓存
+  - 索引：`sql/install.sql`、`core/Installer.php` 新增
+    `idx_clicks`、`idx_updated_at`，并提供 `sql/migrate_310_performance.sql`
+    （老库可选执行，不改数据）
+  - 修复：自动刮削分支提前到 item 分支之前并加异常兜底；
+    `core/CacheStore.php` 的 `\PDO::PARAM_INT` / `\PDO::FETCH_ASSOC` 命名空间错误
+  - 后台：`admin/index.php` 改为读取 `token_preview`，修复令牌列表空白
+
+修改文件清单：
+
+```
+api/unified.php           core/Json.php             core/DB.php
+core/CacheStore.php       core/ApiToken.php         core/Installer.php
+sql/install.sql           sql/migrate_310_performance.sql
+admin/index.php
+```
+
 ## v2.2.0（2026-09-24）
 
 - **修：详情页演员阵容不显示**（`core/Views.php`）

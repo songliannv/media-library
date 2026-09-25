@@ -4,6 +4,15 @@
 
 ---
 
+
+## PHP 8.2 与发布保护
+
+本版本运行基线为 PHP 8.2+，不再兼容 PHP 5.6、7.x 或 8.0/8.1。发布目录中的 PHP 文件经过 AST 混淆和压缩，用于降低直接阅读成本，但这不等同于编码加密。
+
+Nuitka 是 Python 编译器，不能编译或加密本项目的 PHP 文件。若需要真正的 PHP 编码保护，应使用支持 PHP 8.2 的 ionCube Encoder + ionCube Loader，或 SourceGuardian + 对应 Loader。编码器必须在构建机执行，宝塔服务器只安装与 PHP 8.2、FPM/CLI SAPI 和 CPU 架构匹配的 Loader。
+
+当前工作区未包含商业编码器及授权文件，因此本版不会伪称为“加密包”。部署前请在宝塔 PHP 8.2 的 FPM 和 CLI 分别确认 Loader 已加载；计划任务执行的 `cron/*.php` 使用 CLI PHP，也必须能加载 Loader。
+
 ## 一、前置条件
 
 | 项 | 要求 |
@@ -701,7 +710,7 @@ curl http://127.0.0.1:8888/api/health
 
 ## 十八、常见问题
 
-- **Parse error: unexpected '=>' / '??' 之类的语法错误**：说明站点 PHP 版本与代码不匹配。v1.9.6 起仅支持 PHP 8.2+，请确认站点 PHP 版本 ≥ 8.2 并覆盖上传了**全部**文件（尤其 `core/`、`api/`），并清一次 opcache / 重启 PHP。
+- **Parse error: unexpected '=>' / '??' 之类的语法错误**：说明站点 PHP 版本与代码不匹配。v3.1.1 起仅支持 PHP 8.2+，请确认站点 PHP 版本 ≥ 8.2 并覆盖上传了**全部**文件（尤其 `core/`、`api/`），并清一次 opcache / 重启 PHP。
 - **访问 `/admin` 或 `/api/v1/*` 返回 404**：伪静态没配。见第四节，`location / { try_files $uri $uri/ /index.php?$query_string; }`。
 - **502 / 空白**：检查 PHP 是否开启 `curl`、`pdo_mysql`；看站点错误日志。
 - **返回 401**：后台接口需带 `X-Admin-Token: 你的token`。
