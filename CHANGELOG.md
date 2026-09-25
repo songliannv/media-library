@@ -1,5 +1,22 @@
 # 版本记录 · media-library-api
 
+## v3.1.2（2026-09-26）
+
+- **新增 · 本地资源导入**：后台新增「本地资源」标签页，把本地已有的网盘 / 磁力资源直接入库
+  - **粘贴解析**：粘贴夸克 / 百度 / 迅雷 / 磁力等分享文本，自动识别链接、资源名与提取码（`pwd=`），预览后一键入库
+  - **手动输入**：表单录入名称 / 地址 / 分类 / 封面 / 简介 / 关键字，单条入库
+  - **Excel 导入**：上传 `.xlsx` / `.csv`（旧版 `.xls` 二进制请先另存为 `.xlsx`），智能去表头，预览后导入
+  - 三种方式均走「管理员登录态 + CSRF」校验，复用 `CacheStore::insertManual`，按 **标题 + 分类** 去重
+  - 纯 PHP 实现（`core/XlsxReader.php`，不依赖 PHPExcel），适配本项目 **PHP 8.2-only** 基线
+
+修改文件清单：
+
+```
+api/unified.php          admin/index.php           core/XlsxReader.php（新增）
+index.php                install.php               功能说明.txt
+安装说明.txt               README.md                .workbuddy/build_release_194.py
+```
+
 ## v3.1.1（2026-09-25）
 
 - **运行基线收紧为 PHP 8.2+，移除全部旧版兼容**（本次主线改动）
