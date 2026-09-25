@@ -1,6 +1,6 @@
 # 版本记录 · media-library-api
 
-## v3.1.1（2026-09-26）
+## v3.1.1（2026-09-25）
 
 - **运行基线收紧为 PHP 8.2+，移除全部旧版兼容**（本次主线改动）
   - 随机安全相关全部改用 PHP 8.2 原生 API，删掉 `mt_rand()` /
@@ -34,7 +34,7 @@ admin/index.php           check.php                install.php
 .workbuddy/build_release_194.py
 ```
 
-## v3.1.0（2026-09-26）
+## v3.1.0（2026-09-25）
 
 - **稳定性 / 性能 / 安全优化**（上一轮）
   - API：`api/unified.php` 统一 page(1~10000) / per(1~100) / 搜索词 ≤200 /
