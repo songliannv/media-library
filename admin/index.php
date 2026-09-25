@@ -1,5 +1,5 @@
 <?php
-use Core\Config;use Core\User;if(!defined('ML_APP')){define('ML_APP',true);}if(!defined('ML_ROOT')){define('ML_ROOT',dirname(__DIR__));}if(!defined('ML_APP_VERSION')){define('ML_APP_VERSION','3.1.4');}header('Content-Type: text/html; charset=utf-8');header('X-Robots-Tag: noindex, nofollow');require_once __DIR__.'/../core/Guard.php';ml_guard_shield(__FILE__);require_once __DIR__.'/../core/Session.php';require_once __DIR__.'/../core/DB.php';require_once __DIR__.'/../core/Config.php';require_once __DIR__.'/../core/User.php';$a=ml_session_boot(User::SESS);function ml_ad_csrf(){if(empty($_SESSION['ml_ad_csrf'])){$_SESSION['ml_ad_csrf']=bin2hex(random_bytes(32));}return(string)$_SESSION['ml_ad_csrf'];}$b=trim((string)Config::sub('admin','dir','admin'),'/');if($b===''||!preg_match('/^[A-Za-z0-9_-]+$/',$b)||substr($b,-5)!=='admin'){$b='admin';}$c='/'.$b.'/';$d='';$e='';$f='';$g=isset($_POST['ad_do'])?(string)$_POST['ad_do']:'';if($g===''&&isset($_POST['u'],$_POST['p'])){$g='login';}if($g==='login'){$f='user';if(!$a){$d='服务器无法保存登录会话（session 不可写），所以登不上去。'.'请打开 check.php 看「会话」一栏，或让服务商把 PHP 的 session.save_path 目录设为可写。';}elseif(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期（登录会话没保持住），请再提交一次；若反复如此，请打开 check.php 看「会话」一栏。';}elseif(isset($_POST['ml_hp'])&&trim((string)$_POST['ml_hp'])!==''){$d='检测到异常提交，已忽略。';}else{$h=isset($_POST['u'])?(string)$_POST['u']:'';$i=isset($_POST['p'])?(string)$_POST['p']:'';$j=User::login($h,$i);if(!empty($j['ok'])){if(User::isAdmin()){header('Location: '.$c);exit;}User::logout();$d='该账号不是管理员，无法进入后台。';}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='forgot'){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::requestReset(isset($_POST['account'])?(string)$_POST['account']:'','admin');if(!empty($j['ok'])){$e=(string)$j['msg'];}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='reset'){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::doReset(isset($_POST['token'])?(string)$_POST['token']:'',isset($_POST['new'])?(string)$_POST['new']:'',isset($_POST['new2'])?(string)$_POST['new2']:'');if(!empty($j['ok'])){$e=(string)$j['msg'].' 请用新密码登录。';}else{$d=(string)$j['msg'];}}}if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['logout'])){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{User::logout();header('Location: '.$c);exit;}}$k=User::me();if(!$k||!User::isAdmin()){$l='login';$m='';if(isset($_GET['reset'])){$l='reset';$m=(string)$_GET['reset'];}elseif(isset($_GET['forgot'])){$l='forgot';}if($e!==''&&$l==='reset'){$l='login';}$n=($l==='reset')?(User::verifyResetToken($m)!==null):false;?><!DOCTYPE html>
+use Core\Config;use Core\User;if(!defined('ML_APP')){define('ML_APP',true);}if(!defined('ML_ROOT')){define('ML_ROOT',dirname(__DIR__));}if(!defined('ML_APP_VERSION')){define('ML_APP_VERSION','3.1.5');}header('Content-Type: text/html; charset=utf-8');header('X-Robots-Tag: noindex, nofollow');require_once __DIR__.'/../core/Guard.php';ml_guard_shield(__FILE__);require_once __DIR__.'/../core/Session.php';require_once __DIR__.'/../core/DB.php';require_once __DIR__.'/../core/Config.php';require_once __DIR__.'/../core/User.php';$a=ml_session_boot(User::SESS);function ml_ad_csrf(){if(empty($_SESSION['ml_ad_csrf'])){$_SESSION['ml_ad_csrf']=bin2hex(random_bytes(32));}return(string)$_SESSION['ml_ad_csrf'];}$b=trim((string)Config::sub('admin','dir','admin'),'/');if($b===''||!preg_match('/^[A-Za-z0-9_-]+$/',$b)||substr($b,-5)!=='admin'){$b='admin';}$c='/'.$b.'/';$d='';$e='';$f='';$g=isset($_POST['ad_do'])?(string)$_POST['ad_do']:'';if($g===''&&isset($_POST['u'],$_POST['p'])){$g='login';}if($g==='login'){$f='user';if(!$a){$d='服务器无法保存登录会话（session 不可写），所以登不上去。'.'请打开 check.php 看「会话」一栏，或让服务商把 PHP 的 session.save_path 目录设为可写。';}elseif(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期（登录会话没保持住），请再提交一次；若反复如此，请打开 check.php 看「会话」一栏。';}elseif(isset($_POST['ml_hp'])&&trim((string)$_POST['ml_hp'])!==''){$d='检测到异常提交，已忽略。';}else{$h=isset($_POST['u'])?(string)$_POST['u']:'';$i=isset($_POST['p'])?(string)$_POST['p']:'';$j=User::login($h,$i);if(!empty($j['ok'])){if(User::isAdmin()){header('Location: '.$c);exit;}User::logout();$d='该账号不是管理员，无法进入后台。';}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='forgot'){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::requestReset(isset($_POST['account'])?(string)$_POST['account']:'','admin');if(!empty($j['ok'])){$e=(string)$j['msg'];}else{$d=(string)$j['msg'];}}}if(isset($_POST['ad_do'])&&$_POST['ad_do']==='reset'){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{$j=User::doReset(isset($_POST['token'])?(string)$_POST['token']:'',isset($_POST['new'])?(string)$_POST['new']:'',isset($_POST['new2'])?(string)$_POST['new2']:'');if(!empty($j['ok'])){$e=(string)$j['msg'].' 请用新密码登录。';}else{$d=(string)$j['msg'];}}}if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['logout'])){if(!isset($_POST['csrf'])||!User::secureEquals(ml_ad_csrf(),(string)$_POST['csrf'])){$d='页面已过期，请重新提交。';}else{User::logout();header('Location: '.$c);exit;}}$k=User::me();if(!$k||!User::isAdmin()){$l='login';$m='';if(isset($_GET['reset'])){$l='reset';$m=(string)$_GET['reset'];}elseif(isset($_GET['forgot'])){$l='forgot';}if($e!==''&&$l==='reset'){$l='login';}$n=($l==='reset')?(User::verifyResetToken($m)!==null):false;?><!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -272,6 +272,27 @@ exit;}?>
 .pan-card{display:flex;flex-direction:column;gap:0;border:3px solid var(--pri);border-radius:14px;padding:16px 18px;background:var(--card)}
 .pan-card-title{font-size:15px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:0}
 .pan-cookie-info{display:flex;gap:8px;align-items:center;margin:2px 0 8px;padding-left:2px}
+/* --- 本地资源导入页（v3.1.5 美化：统一表单控件 / 内嵌卡片 / 结果预览） --- */
+.local-sub{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:18px 20px 20px;max-width:880px}
+.local-sub>label,.local-sub .form-row>label{display:block;font-size:13px;font-weight:600;color:var(--txt);margin:0 0 7px}
+.local-sub .form-row{margin:0 0 14px}
+#tab-local textarea{width:100%;box-sizing:border-box;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:var(--card);font:13px/1.8 ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;color:var(--txt);outline:none;transition:.15s;resize:vertical}
+#tab-local textarea:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(91,91,214,.13)}
+#tab-local select{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt);font-size:14px;outline:none;cursor:pointer;transition:.15s}
+#tab-local select:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(91,91,214,.13)}
+#tab-local input[type=text],#tab-local input:not([type]){width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt);font-size:14px;outline:none;transition:.15s;font-family:inherit}
+#tab-local input:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(91,91,214,.13)}
+#tab-local input[type=file]{width:100%;box-sizing:border-box;padding:16px 14px;border:1.5px dashed var(--line);border-radius:14px;background:var(--card);color:var(--mut);font-size:13px;cursor:pointer;transition:.15s}
+#tab-local input[type=file]:hover{border-color:var(--pri);color:var(--pri)}
+#tab-local input[type=file]::file-selector-button{margin-right:12px;padding:8px 16px;border:0;border-radius:9px;background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;font-weight:600;font-size:13px;cursor:pointer}
+.local-type-row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.local-type-row>label{margin:0!important}
+.local-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.local-actions{display:flex;gap:10px;margin-top:16px}
+#tab-local .lpv{margin-top:16px}
+#tab-local .lpv:has(table){background:var(--card);border:1px solid var(--line);border-radius:14px;padding:2px 14px 8px;overflow-x:auto}
+#tab-local .lpv .lpv-title{font-size:12.5px;font-weight:700;color:var(--pri);padding:10px 2px 4px}
+#tab-local .lpv table{margin:0 0 8px}
 .pan-card-link{color:var(--pri);font-size:11.5px;text-decoration:none;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);transition:.15s;display:inline-flex;align-items:center;gap:4px}
 .pan-card-link:hover{border-color:var(--pri);background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff}
 :root[data-theme=dark] .pan-card-link{background:rgba(91,91,214,.08)}
@@ -387,6 +408,8 @@ table{min-width:auto;max-width:100%}
   .sec-bd{flex:0 0 auto}
   .site-2col{grid-template-columns:1fr;gap:12px}
   .pan-2col{grid-template-columns:1fr;gap:12px}
+  .local-2col{grid-template-columns:1fr;gap:12px}
+  .local-sub{padding:14px 14px 16px}
   .chks{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 10px}
   .inline{gap:7px}
   .inline input[type=text]{min-width:0;flex:1 1 100%;font-size:16px}
@@ -762,53 +785,64 @@ table{min-width:auto;max-width:100%}
   </div>
   <div id="tab-local" class="tabpane" style="display:none">
     <div class="card">
-      <h2>本地资源导入</h2>
-      <p class="hint">把本地已有的网盘 / 磁力资源直接导入资料库，三种方式任选其一。</p>
+      <h2>📥 本地资源导入</h2>
+      <p class="hint">把本地已有的网盘 / 磁力资源直接导入资料库，三种方式任选其一：粘贴一大段分享文本自动解析、逐条手动录入、或上传 Excel 表格批量导入。</p>
       <div class="subtabs" id="localSubtabs">
-        <button class="stab active" data-stab="paste" onclick="switchLocalTab('paste')">粘贴解析</button>
-        <button class="stab" data-stab="manual" onclick="switchLocalTab('manual')">手动输入</button>
-        <button class="stab" data-stab="excel" onclick="switchLocalTab('excel')">Excel 导入</button>
+        <button class="stab active" data-stab="paste" onclick="switchLocalTab('paste')">📋 粘贴解析</button>
+        <button class="stab" data-stab="manual" onclick="switchLocalTab('manual')">✏️ 手动输入</button>
+        <button class="stab" data-stab="excel" onclick="switchLocalTab('excel')">📊 Excel 导入</button>
       </div>
 
       <!-- 粘贴解析 -->
       <div id="local-paste" class="local-sub">
         <label>粘贴分享内容（夸克 / 百度 / 迅雷 / 磁力等网盘分享文本）</label>
-        <textarea id="lpText" rows="8" style="width:100%;box-sizing:border-box" placeholder="例如：&#10;「电影名」https://pan.quark.cn/s/xxx&#10;资源名 https://pan.baidu.com/s/xxx?pwd=abcd"></textarea>
-        <div class="form-row" style="margin-top:8px">
-          <label style="margin:0">默认分类：</label>
-          <select id="lpType" style="width:auto"></select>
+        <textarea id="lpText" rows="8" placeholder="例如：&#10;「电影名」https://pan.quark.cn/s/xxx&#10;资源名 https://pan.baidu.com/s/xxx?pwd=abcd"></textarea>
+        <div class="local-type-row">
+          <label>默认分类：</label>
+          <select id="lpType"></select>
+          <span class="hint">无法识别分类的资源会落到这里</span>
         </div>
-        <div class="row" style="margin-top:12px">
-          <button onclick="localParse()">识别解析</button>
+        <div class="local-actions">
+          <button onclick="localParse()">🔍 识别解析</button>
         </div>
-        <div id="lpResult" style="margin-top:16px"></div>
-        <div id="lpImportRow" class="row" style="margin-top:12px;display:none">
-          <button onclick="localImportParsed()">导入 <span id="lpCount">0</span> 条</button>
-          <button class="ghost" onclick="localParseClear()">清空</button>
+        <div id="lpResult" class="lpv"></div>
+        <div id="lpImportRow" class="local-actions" style="display:none">
+          <button onclick="localImportParsed()">📥 导入 <span id="lpCount">0</span> 条</button>
+          <button class="ghost" onclick="localParseClear()">清空重来</button>
         </div>
       </div>
 
       <!-- 手动输入 -->
       <div id="local-manual" class="local-sub" style="display:none">
-        <div class="form-row"><label>资源名称 *</label><input id="lmTitle" placeholder="资源名称"></div>
-        <div class="form-row"><label>资源地址 *</label><input id="lmUrl" placeholder="网盘 / 磁力 / 任意链接"></div>
-        <div class="form-row"><label>分类</label><select id="lmType" style="width:auto"></select></div>
-        <div class="form-row"><label>封面图片 URL</label><input id="lmPoster" placeholder="可选，封面图地址"></div>
-        <div class="form-row"><label>资源介绍</label><textarea id="lmOverview" rows="3" style="width:100%;box-sizing:border-box" placeholder="可选"></textarea></div>
+        <div class="form-row"><label>资源名称 *</label><input id="lmTitle" placeholder="例：顶楼 第五季 4K 全集"></div>
+        <div class="form-row"><label>资源地址 *</label><input id="lmUrl" placeholder="网盘 / 磁力 / 任意链接，例：https://pan.quark.cn/s/xxx"></div>
+        <div class="local-2col">
+          <div class="form-row"><label>分类</label><select id="lmType"></select></div>
+          <div class="form-row"><label>封面图片 URL</label><input id="lmPoster" placeholder="可选，封面图地址"></div>
+        </div>
+        <div class="form-row"><label>资源介绍</label><textarea id="lmOverview" rows="3" placeholder="可选，一两句话介绍这个资源"></textarea></div>
         <div class="form-row"><label>关键字</label><input id="lmGenres" placeholder="可选，逗号分隔，如 电影, 高清"></div>
-        <div class="row" style="margin-top:12px"><button onclick="localManualSubmit()">提交</button></div>
+        <div class="local-actions">
+          <button onclick="localManualSubmit()">📥 提交入库</button>
+        </div>
       </div>
 
       <!-- Excel 导入 -->
       <div id="local-excel" class="local-sub" style="display:none">
-        <p class="hint">列顺序：第1列 资源名称，第2列 分享链接，第3列 分类(可空)，第4列 账号(可空)，第5列 简介(可空)。<br>优先使用 .xlsx；旧版 .xls 二进制格式请先另存为 .xlsx。也支持 .csv。</p>
+        <div class="ext-note" style="margin:0 0 14px">📋 <b>表格列顺序</b>：第 1 列 资源名称 · 第 2 列 分享链接 · 第 3 列 分类(可空) · 第 4 列 账号(可空) · 第 5 列 简介(可空)。<br>优先使用 .xlsx（也支持 .csv）；旧版 .xls 二进制格式请先在 Excel 里「另存为 .xlsx」。</div>
         <div class="form-row"><label>选择文件</label><input type="file" id="leFile" accept=".xlsx,.xls,.csv"></div>
-        <div class="form-row"><label>默认分类</label><select id="leType" style="width:auto"></select></div>
-        <div class="row" style="margin-top:12px"><button onclick="localExcelParse()">解析文件</button></div>
-        <div id="leResult" style="margin-top:16px"></div>
-        <div id="leImportRow" class="row" style="margin-top:12px;display:none">
-          <button onclick="localExcelImport()">导入 <span id="leCount">0</span> 条</button>
-          <button class="ghost" onclick="localExcelClear()">清空</button>
+        <div class="local-type-row" style="margin-top:0">
+          <label>默认分类：</label>
+          <select id="leType"></select>
+          <span class="hint">表格第 3 列为空时使用</span>
+        </div>
+        <div class="local-actions">
+          <button onclick="localExcelParse()">🔍 解析文件</button>
+        </div>
+        <div id="leResult" class="lpv"></div>
+        <div id="leImportRow" class="local-actions" style="display:none">
+          <button onclick="localExcelImport()">📥 导入 <span id="leCount">0</span> 条</button>
+          <button class="ghost" onclick="localExcelClear()">清空重来</button>
         </div>
       </div>
     </div>
@@ -2864,7 +2898,8 @@ function renderLocalPreview(resultId, countId, rowId, items, holder){
   const box = document.getElementById(resultId);
   const row = document.getElementById(rowId);
   if(!items.length){ box.innerHTML = '<div class="hint">未识别到资源</div>'; row.style.display='none'; return; }
-  let h = '<table><thead><tr><th>#</th><th>资源名称</th><th>地址</th><th>网盘</th><th></th></tr></thead><tbody>';
+  let h = '<div class="lpv-title">✅ 识别结果 · 共 '+items.length+' 条（确认无误后点下方「导入」）</div>'
+    + '<table><thead><tr><th>#</th><th>资源名称</th><th>地址</th><th>网盘</th><th></th></tr></thead><tbody>';
   items.forEach((it,i)=>{
     h += '<tr><td>'+(i+1)+'</td>'
       + '<td>'+esc(it.title||'(未命名)')+'</td>'
