@@ -1,5 +1,5 @@
 -- 媒资资料库 API - 建表脚本
--- 兼容 MySQL 5.6+（genres/detail 用 TEXT 而非 JSON 列类型）
+-- 运行基线：PHP 8.2+ + MySQL 5.7+（genres/detail 用 TEXT 而非 JSON 列类型）
 -- 在宝塔 phpMyAdmin 或命令行执行；库名与 config.php 中 db.dbname 保持一致。
 
 CREATE DATABASE IF NOT EXISTS media_library DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -27,13 +27,19 @@ CREATE TABLE IF NOT EXISTS media_items (
   cached_at     DATETIME     DEFAULT NULL,
   refresh_at    DATETIME     DEFAULT NULL COMMENT '过期时间，之前代理直接返回本地',
   updated_at    DATETIME     DEFAULT NULL,
+  status        VARCHAR(16)  NOT NULL DEFAULT 'active' COMMENT 'active=正式条目 pending=暂存（待刮削）',
   UNIQUE KEY uq_src (source, source_id, type),
   KEY idx_type (type),
   KEY idx_title (title(191)),
   KEY idx_year (year),
   KEY idx_rating (rating),
   KEY idx_clicks (clicks),
-  KEY idx_updated_at (updated_at)
+  KEY idx_updated_at (updated_at),
+  KEY idx_status (status),
+  KEY idx_type_year (type, year),
+  KEY idx_type_rating (type, rating),
+  KEY idx_type_clicks (type, clicks),
+  KEY idx_type_updated (type, updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS sync_log (
@@ -43,7 +49,8 @@ CREATE TABLE IF NOT EXISTS sync_log (
   items      INT DEFAULT 0,
   created_at DATETIME DEFAULT NULL,
   KEY idx_task (task),
-  KEY idx_created_at (created_at)
+  KEY idx_created_at (created_at),
+  KEY idx_task_created (task, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS link_checks (
@@ -53,8 +60,12 @@ CREATE TABLE IF NOT EXISTS link_checks (
   url        VARCHAR(2048) NOT NULL DEFAULT '',
   status     TINYINT NOT NULL DEFAULT 0 COMMENT '1=有效 0=失效',
   http_code  SMALLINT NOT NULL DEFAULT 0,
+  msg        VARCHAR(200) NOT NULL DEFAULT '' COMMENT '检测原因：接口返回的中文说明',
   checked_at DATETIME DEFAULT NULL,
-  KEY idx_item (item_id)
+  KEY idx_item (item_id),
+  KEY idx_item_checked (item_id, checked_at),
+  KEY idx_status (status),
+  KEY idx_checked_at (checked_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 后台「系统设置」保存的运行时设置（管理员令牌 / API Key / 数据源 / 网盘类型）
@@ -80,12 +91,14 @@ CREATE TABLE IF NOT EXISTS `app_users` (
   `lock_until` DATETIME     DEFAULT NULL COMMENT '锁定到期时间（满 5 次失败锁 15 分钟）',
   `created_at` DATETIME     DEFAULT NULL,
   `last_login` DATETIME     DEFAULT NULL,
+  `is_admin`   TINYINT      NOT NULL DEFAULT 0 COMMENT '1=管理员',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_username` (`username`),
   KEY `idx_email` (`email`),
   KEY `idx_status` (`status`),
   KEY `idx_created` (`created_at`),
-  KEY `idx_lock` (`status`, `fail_count`, `lock_until`)
+  KEY `idx_lock` (`status`, `fail_count`, `lock_until`),
+  KEY `idx_status_created` (`status`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='前台注册用户';
 
 -- 资源请求（求片区，v1.6.2 起）
@@ -108,7 +121,8 @@ CREATE TABLE IF NOT EXISTS `app_requests` (
   KEY `idx_user` (`user_id`),
   KEY `idx_status` (`status`),
   KEY `idx_created` (`created_at`),
-  KEY `idx_title` (`title`(191))
+  KEY `idx_title` (`title`(191)),
+  KEY `idx_status_created` (`status`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资源请求';
 
 -- API 调用令牌（v1.7.0 起；程序首次使用时也会自动创建，这里给出便于手动安装）
@@ -147,5 +161,7 @@ CREATE TABLE IF NOT EXISTS `app_api_logs` (
   PRIMARY KEY (`id`),
   KEY `idx_token` (`token_id`),
   KEY `idx_endpoint` (`endpoint`),
-  KEY `idx_created` (`created_at`)
+  KEY `idx_created` (`created_at`),
+  KEY `idx_token_created` (`token_id`, `created_at`),
+  KEY `idx_ip_created` (`ip`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='API 调用日志';

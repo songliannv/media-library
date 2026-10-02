@@ -1,399 +1,529 @@
-# 版本记录 · media-library-api
+# 更新日志（media-library-api）
 
-## v3.1.6（2026-09-25）
+> 版本号规则：末段 ≤9 递增，超过 9 进位到中段（4.4.9 → 4.5.0）。
+> 以下为 v4.3.7 起的版本记录（新版本在上）。
 
-- **美化 · 后台「自动刮削」页**（用户截图反馈：下拉框 / 数字框是浏览器默认样式）：
-  - 参数区收进内嵌浅色卡片（复用 `.local-sub`），类型筛选 / 处理数量双列排布（`.local-2col`），
-    控件套用后台统一风格（圆角 + 聚焦高亮圈，`#tab-scrape` 作用域样式）
-  - 状态提示由裸 hint/ok/err 升级为 `ext-note` 语义色提示框
-    （就绪灰 / 进行中黄 / 成功绿 / 失败红）
-  - 运行日志改深色终端风面板（`.scrape-log`，暗色主题适配），标记 `[开始]/[完成]/[失败]` 高亮
-  - 刮削进行中「开始刮削」按钮禁用（`finally` 恢复），防重复点击
-  - 纯展示层调整，不改刮削逻辑、不改数据库
+# v4.5.6（2026-10-02）全量死代码清理（行为等价）
 
-修改文件清单：
+- AST 全量扫描 72 个 PHP 文件、确认零调用后，删除 30 个死方法 + 6 个死函数，涵盖 `Views::navHtml`/`gameBlock`、`CacheStore::allIds`/`countItemsWithLinks`/`demoteToPending`、`DB::ensureColumn`/`ensureIndex`、`User::deleteRequests`/`markAdmin`/`sessionPath`/`sessionUsable`、`RateLimit::isExceeded`/`setEnabled`/`remaining`、`Headers::staticFile`、`Http::lastMeta`、`Mail::whyNotReady`、`PanQr::supports`、`PanSou::labelOf`、`Settings::has`、`StaticGen::lastStats`、安装器 `cli_q`/`cli_rand_token`、自检 `ml_bool` 等。
+- 整文件删除 `core/Search.php`（MySQL 全文搜索类，`byKeyword`/`suggest`/`hotTags`/`hasFulltextIndex` 全库零调用），同步移除 `index.php` 的 `require` 与 `core/Guard.php` 允许列表条目。
+- 精简适配器契约：`Adapter` 接口及 `Tmdb`/`HongguoDuanju` 实现的 `getSource()`（`Sync` 仅 `new $cls()`，从不调用）；另移除 `core/Version.php` 的 `ml_version_parts()`（`function_exists` 包裹、零调用）。
+- 纯删除、无任何调用点，线上行为完全等价；覆盖升级即可，无需清缓存 / 重新生成静态页。
 
-```
-admin/index.php            index.php                 install.php
-功能说明.txt                安装说明.txt               README.md
-.workbuddy/build_release_194.py
-```
+# v4.5.4（2026-10-02）图片代理再改名 mimg.php（随机名避开安全规则）
 
+- pic.php 线上仍 404（与 img.php 同症状，疑似安全规则名单较广），主端点改为不易被名单命中的 mimg.php；pic.php / img.php 均保留为兼容壳，三个地址同一份逻辑，谁没被拦谁生效。
+- 页面全部生成 /mimg.php?p=… 新地址；覆盖升级后需在后台重新「生成静态页」。
 
-## v3.1.5（2026-09-25）
+# v4.5.3（2026-10-02）演员头像补齐增加百度图片搜索兜底
 
-- **美化 · 后台「本地资源导入」页**（用户截图反馈：表单控件全是浏览器默认样式）：
-  - 三个子页（粘贴解析 / 手动输入 / Excel 导入）改为内嵌浅色卡片（`.local-sub`），
-    与后台整体设计体系统一
-  - 页面级 input / select / textarea 首次套上后台风格：圆角 + 聚焦高亮圈；
-    粘贴解析框用等宽字体；Excel 文件选择改虚线拖放区 + 渐变选择按钮
-  - 识别结果预览升级为结果卡片（带「✅ 识别结果 · 共 N 条」标题，`:has(table)` 按需显示）
-  - 子标签加图标；Excel 列顺序说明改为高亮提示框；按钮区统一左对齐（`.local-actions`）
-  - 手机端适配：双列收单列、内边距收紧
-  - 纯展示层调整，不改功能逻辑、不改数据库
+- 百科没有词条的冷门短剧演员（如宋芮依、刘洪皓），自动用百度图片搜索按姓名取第一张竖版图，下载校验后落盘（依赖 image.baidu.com acjson 接口，需带 image.baidu.com Referer）。
+- 补图顺序变为：本地缓存 → 已解析远程缓存 → 百度百科词条头图 → 百度图片搜索 → TMDB 人物搜索 → 7 天失败标记（标记文件名由 .fail 改为 .nof，升级后此前补图失败的演员会立即用新链路重试一次）。
 
-修改文件清单：
+# v4.5.2（2026-10-02）头像补齐扩展到 TMDB 外国演员 + 胶囊排布收紧
 
-```
-admin/index.php            index.php                 install.php
-功能说明.txt                安装说明.txt               README.md
-.workbuddy/build_release_194.py
-```
+- 百科没有词条的外国演员，自动改用 TMDB 人物搜索（用已配置的 TMDB Key）补头像：命中即返回 TMDB 头像地址（走 pic.php 代理），并写 .url 缓存避免重复请求。补图顺序：本地缓存 → 已解析远程缓存 → 百度百科词条头图 → TMDB 人物搜索 → 7 天失败标记。
+- 演员胶囊内边距与间距收紧（16→14px / 8→6px），每行可多排一名，减少行尾留白。
 
 
-## v3.1.4（2026-09-25）
+# v4.5.1（2026-10-02）演职员头像百度百科补齐
 
-- **新增 · 网盘扫码登录**（后台「系统设置 → 接口配置」）：
-  - 夸克 / UC / 百度 / 阿里 四张 Cookie 卡片新增「📱 扫码登录」按钮，
-    弹窗出二维码（每 2.5s 轮询状态）→ 对应 App 扫码确认 → 服务端换取凭据自动回填 Cookie 框
-  - 协议（公开逆向，多方开源验证）：夸克 `uop.quark.cn`（client_id=532）、
-    UC `api.open.uc.cn`（client_id=381）、百度 `passport.baidu.com` getqrcode→unicast→qrbdusslogin、
-    阿里 `passport.aliyundrive.com` generate.do→query.do（bizExt 解码取 accessToken/refreshToken）
-  - 新建 `core/PanQr.php`（纯 PHP curl + 临时 cookie jar，用后即删；不引第三方服务）
-  - `api/unified.php` 新增 `pan_qr_create` / `pan_qr_poll` 两个 admin 端点（鉴权 + CSRF）
-  - `admin/index.php` 内嵌 qrcode.min.js（MIT，本地生成二维码，无 CDN 依赖）+ 扫码弹窗与轮询 JS
-  - 迅雷（设备签名协议、易失效）/ 光鸭（无公开协议）保留手动粘贴；四家的手动入口也保留
-  - 不改数据库、不改前台
+- 短剧等来源拿不到演职员头像时，详情页渲染自动按姓名查百度百科词条头图，服务器下载校验后落盘 `uisc-assets/people/{md5}.jpg`，一次补齐永久使用。
+- 失败（无词条/网络失败）写 7 天重试标记，页面照常显示占位卡；覆盖 `extra.cast` 无 profile 与 `extra.actors` 字符串两条渲染路径。
+- 注意：补图发生在「生成静态页」时，缺失较多时首次构建变慢，补齐后恢复。
 
-修改文件清单：
+# v4.5.0（2026-10-02）图片代理改名 pic.php + 直连回退
 
-```
-core/PanQr.php（新增）     core/Settings.php         api/unified.php
-admin/index.php            index.php                 install.php
-功能说明.txt                安装说明.txt               README.md
-.workbuddy/build_release_194.py
-```
+- 线上 `img.php` 被主机安全规则按文件名拦截（文件在磁盘但访问 404），图片代理整体改名 **pic.php**，全部页面生成新地址；`img.php` 保留为兼容壳转发旧地址。
+- 海报、列表封面、演职员头像增加 onerror 一次性直连回退：代理失败时访客网络能直连 image.tmdb.org 仍可出图。
+- 整包 68 文件。
 
+# v4.4.9（2026-10-02）信息块 3 列网格
 
-## v3.1.3（2026-09-25）
+- 「XX信息」块由均分改为 3 列网格：**导演占 1/3、演员占 2/3**，其余字段各占 1/3；单字段块占满整行；窄屏塌成单列。
 
-- **修复 · 前台三处展示问题**（用户截图反馈）：
-  - **顶栏公告下沉**：宣传语（slogan）不再挤在顶栏站名旁（窄顶栏里局促、截断难看），
-    改为在首页横幅（banner）顶部**居中**显示一条公告 `.bn-notice`；
-    顶栏只留 LOGO + 站名 + 搜索 + 右侧入口，SEO 用的 `sr-only` 标题保持不变
-  - **空状态居中**：列表为空时「暂无资料…」提示原先被放进 `.grid` 当成一个网格单元格（靠左），
-    现在 `.grid .empty{grid-column:1/-1}` 横跨整行并居中
-  - **页脚居中限宽**：`.foot .fin` 由左对齐全宽改为**居中 + 限宽 860px**，
-    介绍 / 声明 / 版权整块观感更整洁（手机端原本就是居中，行为一致）
-  - 纯展示层调整，**不改数据库、不改接口**；全部样式走追加规则（安全区块仍保持在样式表最后）
+# v4.4.8（2026-10-02）前台水印整体下线
 
-修改文件清单：
+- 移除全部页面的水印样式与铺点脚本（切换页面卡顿排查结论），顺带恢复文字选中与右键菜单；`watermark()` 保留返回空串，`watermark.enable` 设置失效。
 
-```
-core/Views.php            index.php                 install.php
-admin/index.php           功能说明.txt                安装说明.txt
-README.md                 .workbuddy/build_release_194.py
-```
+# v4.4.7（2026-10-02）详情页正文 1.5 倍 + 简介铺满
 
+- 详情页正文文字放大 1.5 倍（简介 21px、信息块标签 18px/值 21.5px、人名胶囊 19px、下载按钮与提示同步）；手机端略低一档。
+- 简介文字去掉 900px 宽度上限，铺满海报右侧可用宽度。
 
-## v3.1.2（2026-09-26）
+# v4.4.6（2026-10-02）短剧「时长」下线
 
-- **新增 · 本地资源导入**：后台新增「本地资源」标签页，把本地已有的网盘 / 磁力资源直接入库
-  - **粘贴解析**：粘贴夸克 / 百度 / 迅雷 / 磁力等分享文本，自动识别链接、资源名与提取码（`pwd=`），预览后一键入库
-  - **手动输入**：表单录入名称 / 地址 / 分类 / 封面 / 简介 / 关键字，单条入库
-  - **Excel 导入**：上传 `.xlsx` / `.csv`（旧版 `.xls` 二进制请先另存为 `.xlsx`），智能去表头，预览后导入
-  - 三种方式均走「管理员登录态 + CSRF」校验，复用 `CacheStore::insertManual`，按 **标题 + 分类** 去重
-  - 纯 PHP 实现（`core/XlsxReader.php`，不依赖 PHPExcel），适配本项目 **PHP 8.2-only** 基线
+- 短剧信息块不再显示时长；后台表单不再提供；红果采集不再写入。电影时长保留。
 
-修改文件清单：
+# v4.4.5（2026-10-02）导演行常驻
 
-```
-api/unified.php          admin/index.php           core/XlsxReader.php（新增）
-index.php                install.php               功能说明.txt
-安装说明.txt               README.md                .workbuddy/build_release_194.py
-```
+- 影视五分类（电影/电视剧/短剧/动漫/综艺）详情页信息块「导演」行必须存在：没抓到显示「暂无」，行不再消失；书籍等无此概念的分类不受影响。
 
-## v3.1.1（2026-09-25）
+# v4.4.4（2026-10-02）后台「清除缓存」按钮
 
-- **运行基线收紧为 PHP 8.2+，移除全部旧版兼容**（本次主线改动）
-  - 随机安全相关全部改用 PHP 8.2 原生 API，删掉 `mt_rand()` /
-    `openssl_random_pseudo_bytes()` 回退：
-    - `core/User.php`：`User::rand()` 改 `bin2hex(random_bytes($bytes))`，
-      验证码 `random_int()`，CIDR 字节换算恢复 `intdiv($bits, 8)`
-    - `core/ApiToken.php`：`randToken()` 改 `bin2hex(random_bytes(24))`
-    - `core/Installer.php`：安装令牌 `substr(bin2hex(random_bytes(16)),0,16)`，
-      盐值生成用 `random_int()`
-    - `core/CacheStore.php`：缓存键随机后缀用 `random_int()`
-    - `admin/index.php`：后台 CSRF 直接 `bin2hex(random_bytes(32))`
-    - `core/Mail.php`：邮件边界标识改用 `bin2hex(random_bytes(16))`
-    - `check.php`：自检里的随机样例改用 `bin2hex(random_bytes(...))`
-  - 异常兜底统一为 `\Throwable`（原 `\Exception`），运行时错误也能进 JSON / 日志兜底
-  - `core/Session.php`：`session_set_cookie_params()` 只保留 PHP 7.3+ 数组写法
-  - 清理全部「兼容 PHP 5.6」注释与说明，文档统一到 PHP 8.2 基线
-- **文档同步**：`安装说明.txt`、`功能说明.txt`、`DEPLOY.md` 更新 PHP 版本要求，
-  并补「发布保护边界」：当前发布目录是 AST 混淆版，不是 ionCube / SourceGuardian
-  编码加密版；真正编码保护需编码器 + 宝塔 PHP 8.2 的 FPM/CLI Loader
-- **构建门槛**：`.workbuddy/build_release_194.py` 增加保护模式标记，
-  `ML_REQUIRE_PHP_ENCODER=1` 时若未接入真正的 PHP 编码器会直接阻断打包，
-  避免把混淆包当加密包交付
+- 后台右上角新增一键清除全部缓存：CacheStore 文件缓存（标签/人物/接口级）+ 多级缓存（文件/Redis/Memcached/APCu）；只删缓存文件，不碰 config.php 与 install.lock。
 
-修改文件清单：
+# v4.4.3（2026-10-02）详情页头部过滤人名
 
-```
-core/User.php             core/ApiToken.php        core/Installer.php
-core/Session.php          core/CacheStore.php      core/Mail.php
-admin/index.php           check.php                install.php
-安装说明.txt               功能说明.txt                DEPLOY.md
-.workbuddy/build_release_194.py
-```
+- 导演/演员名自 v3.6.0 起并入 genres 列，详情页头部标签栏此前会重复展示人名；现按全局人名清单 + 本条目演职员双层过滤，人名只在下方演职人员/信息块出现。
 
-## v3.1.0（2026-09-25）
+# v4.4.2（2026-10-02）标签项目页统计与点击行为修正
 
-- **稳定性 / 性能 / 安全优化**（上一轮）
-  - API：`api/unified.php` 统一 page(1~10000) / per(1~100) / 搜索词 ≤200 /
-    标签 ≤100 边界；API 日志对 query 里的 token 脱敏；
-    `core/Json.php` 增加 `json_encode` 失败兜底，
-    CORS 允许头补 `X-Api-Token`
-  - 安全：`core/ApiToken.php` 列表不再返回完整 token，只给不可逆预览
-    `token_preview`；数据库连接加 `PDO::ATTR_TIMEOUT => 6`
-  - 缓存：`core/CacheStore.php` 写/改/删后递增标签缓存版本号，
-    解决标签更新不生效，同时避免误删共享 cache 里的其他模块缓存
-  - 索引：`sql/install.sql`、`core/Installer.php` 新增
-    `idx_clicks`、`idx_updated_at`，并提供 `sql/migrate_310_performance.sql`
-    （老库可选执行，不改数据）
-  - 修复：自动刮削分支提前到 item 分支之前并加异常兜底；
-    `core/CacheStore.php` 的 `\PDO::PARAM_INT` / `\PDO::FETCH_ASSOC` 命名空间错误
-  - 后台：`admin/index.php` 改为读取 `token_preview`，修复令牌列表空白
+- 统计行改为全量计数「共 N 项（标签 X · 导演 Y · 演员 Z）」，与页面卡片总数一致。
+- 点导演/演员改为与标签一致的就地展开作品列表（「导演/演员「xx」的作品」），不再直接跳条目管理。
+- 说明：进入某标签时隐藏导演/演员区块是站长要求的行为，保持不变。
 
-修改文件清单：
+# v4.4.1（2026-10-02）标签项目页调整（中间版）
 
-```
-api/unified.php           core/Json.php             core/DB.php
-core/CacheStore.php       core/ApiToken.php         core/Installer.php
-sql/install.sql           sql/migrate_310_performance.sql
-admin/index.php
-```
+- 曾误移除热门导演/演员区块，v4.4.2 恢复；该区块保留是站长要求。
 
-## v2.2.0（2026-09-24）
+# v4.4.0（2026-10-02）头部标签指标右对齐 + 版本规则恢复
 
-- **修：详情页演员阵容不显示**（`core/Views.php`）
-  - v2.1.1 起 `Tmdb::normalize()` 从 credits 抽取演员到 `extra.cast`
-    （字段结构 `{name, character, profile_path}`），
-    但 `Views::castBlock()` 读的是 `payload.credits.cast`（TMDB 原始字段）——
-    两条路径互不连通，前台永远看不到演员。
-  - v2.2.0：`castBlock()` 优先读 `extra.cast`，保留 `payload.credits.cast` 兜底
-    （老数据 / 手动写入 payload 的场景）。
-  - 升级后需后台「生成静态页」刷新已生成的 `/uisc/*.html` 内页。
+- 详情页头部类型标签与评分/年份/热度/点击整体贴右对齐。
+- 版本号恢复「末段超 9 进位」规则（此前 4.3.10~4.3.15 违规连号，本版自 4.3.15 进位）。
 
-- **新增：每小时自动采集可配置**（`core/Settings.php` / `cron/sync_hourly.php`）
-  - 新增两个设置键（后台「同步采集」页可直接改）：
-    - `sync_hourly_enabled`（开/关，默认 1）
-    - `sync_hourly_limit`（1~50，默认 5 条/小时）
-  - `cron/sync_hourly.php` 启动时读 Settings：
-    - 关闭 → 直接跳过、退出码 0（宝塔计划任务不会告警）
-    - 开启 → CLI 没传 `--limit` 时吃 Settings 的 `hourly_limit`（默认 5）
-  - 不影响后台「立即同步」用的 `sync_limit`（那是每源手动条数）。
+# v4.3.15（2026-10-02）详情页头部重排 + 空参数加固
 
-- **新增：标签详情路由 /tag/{slug}**（`index.php` / `core/Views.php`）
-  - 新增路由：`/tag/{slug}` → `CacheStore::listBySort(sort,type,page,per,'',tag)`
-    （复用 `/?tag=xxx` 的查询逻辑，只是 URL 永久、易 SEO）
-  - 详情页标签胶囊从 `<span class="t">` 改为 `<a class="t" href="/tag/{slug}">`
-  - 首页标签云链接从 `/?tag=xxx` 统一改为 `/tag/xxx`
-  - 首页 /tag 页面顶部显示「当前标签：xxx · 清除标签」提示条（复用 v1.8.8 的 tagBar）
+- 头部重排：标题 + 类型标签 + 指标同一横排，简介文字移入头部区域（不再单独成卡）。
+- Site::tidy 每处 preg_replace 主体显式 (string) 强转，消除「Passing null」Deprecated（此前生产日志 Deprecated 风暴同类残留）。
 
+# v4.3.14（2026-10-02）季数/集数全分类下线
 
-## v2.1.3（2026-09-24）
+- 所有分类不再采集、不再展示「季数/集数」（含 TMDB number_of_seasons / number_of_episodes）；后台表单同步移除；历史值不再渲染。
 
-- **新增：TMDB ⇋ 短剧聚合 跨源联动**（`core/CrossLink.php`）
-  - 短剧侧按标题三级匹配（exact / start / contain）实时查 TMDB，用 TMDB 的
-    rating / vote_count / genres / overview / poster 填空，`extra.tmdb_links` 记关联
-  - TMDB 侧在本地搜短剧条目，把短剧的 play_count / episodes / duration /
-    record_number 挂到 `extra`，**不改 TMDB 主字段**（保持 TMDB 权威数据）
-  - 匹配门槛：`min_rating=6.0`、`MIN_LEN=4`（避免"妈妈"过度匹配）、TMDB 侧
-    0.3 秒节流防限流；标题归一化包含繁→简映射
-  - 触发：同步后自动跑 or `POST /api/v1/admin/crosslink/run`（支持 ids/limit/force）；
-    查询：`GET /api/v1/admin/crosslink/cfg`（含最近 30 条联动明细）
-  - 配置：`crosslink.enable` / `auto_after_sync` / `batch_size` /
-    `min_rating` / `match_level` / `dry_run`
+# v4.3.13（2026-10-02）标签详情只看该标签
 
-## v2.1.2（2026-09-24）
+- 后台标签项目页点进某标签后，隐藏常规标签组与热门导演/演员区块，只显示该标签条目；返回时恢复。
 
-- **短剧聚合适配器重写**（`adapters/HongguoDuanju.php`）
-  - 老代码用 `?act=recommend/search/new` 参数，上游 orz.icicic.icu 根本不认，
-    每个请求都超时——同步跑 0 条是真实的
-  - 全部换成官方参数：`type=days_7_to_date`（3 个 action）/
-    `type=rank`（3 个 selected_items）/ `type=search&name=X` / `type=bookid`
-  - rank 返回 `{cell_data:[{video_data:[…]}]}` 嵌套结构，新增 `flattenCells()` 抽平
-  - duration 兼容双形态：`"1小时28分钟"` 与 `8285` 秒数
-  - 分类白名单 60+ 主流分类 + `^[\x{4e00}-\x{9fa5}]{2,4}$` 中文兜底过滤上游乱码
-  - source_id 三级兜底：`book_id → vid → series_id`
-  - `detail()` 语义改正：上游 `type=bookid` 返回的是分集列表（不是书籍元数据），
-    detail 只填 `extra.episodes`，不覆盖其它字段
-- `core/Sync.php` 的 `endpointsFor('hongguoduanju')` 从 2 端点扩到 5 端点
+# v4.3.12（2026-10-02）条目匹配页清理重复按钮
 
-## v2.1.1（2026-09-24）
+- 下线条目匹配工具栏的「去同步采集」跨页跳转按钮与重复的「+ 新增项目」入口（功能只留在所属标签页）。
 
-- **TMDB 二次判定增强**（`adapters/Tmdb.php`）
-  - `append_to_response` 扩到 `credits,images,videos,release_dates,recommendations`
-  - 中文 overview 为空时自动降级 `language=en-US` 拉一次兜底
-  - `normalize` 用 `primary_release_year` / `first_air_date_year` 优先，
-    中英文分类映射（Action→动作、Drama→剧情…），从 credits/videos/images
-    提取演员表 / 预告片 / 剧照写入 `extra.cast/trailer/videos/stills`
-  - `detail` 权威合并策略：字段无条件覆盖 base（不再用 `!empty` 保留 0 值），
-    poster 保底用 base，genres 合并去重
-  - `search` 新增第 4 参数 `$year`（可选，向后兼容），支持
-    `primary_release_year` / `first_air_date_year` 过滤
+# v4.3.11（2026-10-02）跳转扫码下线 + 网盘自动转存引擎
 
-## v2.1.0（2026-09-24）
+- 「跳转/扫码」首页拦截整体下线（后台设置标签改名「前台显示」）。
+- 新增网盘自动转存：core/PanTransfer.php（夸克/UC 同族 API：转存→建分享→改写为站长链接）、cron/pan_transfer.php 计划任务、采集后 5 分钟自动派生、后台端点与条目管理「转存网盘链接」按钮、pan_transfers 记录表去重。
+- /person/ 与 /tag/ 路由对非法 UTF-8 参数直接 404（防探测垃圾刷日志）。
 
-- **修复：同步面板卡在"正在加载..."**（`admin/index.php`）
-  - `loadSyncPlan()` 失败时把错误同步塞进全部 4 个盒子（syncParams / syncPlan /
-    cronBox / syncRecent），不再只塞 syncParams 就 return
-  - 成功路径末尾补调 `loadSyncRecent()`
-  - `loadSyncRecent()` 在 `!SYNC_PLAN` 时明确输出友好提示，不再静默卡死
+# v4.3.10（2026-10-02）后台按钮清理
 
-## v2.0.9（2026-09-24）
+- 条目管理工具栏「同步热门」按钮下线（采集功能保留在「同步采集」标签页）。
 
-- **修复：采集失败 —— PHP Warning $a1 Undefined Variable**
-  - `core/Views.php` 的 `renderItemPage()` 引用了 `$__showAdminLink`，
-    该变量只在 `homeHtml()` 里定义过一次；PHP 函数作用域内不共享，
-    混淆后变量名被重命名为 `$a1` 之类的短名，触发警告文本漏到静态页
-  - 补上定义：`$__showAdminLink = (bool) Config::sub('admin', 'show_link', 1);`
+# v4.3.9（2026-10-02）短剧「出品方/地区」下线
 
-## v2.0.8（2026-09-24）
+- 短剧扩展字段删「出品方」「地区」；红果采集不再写出品公司名；历史值不再渲染。
 
-- 前台顶部导航栏搜索框改为**绝对定位真居中**
-  - 从 flex + `margin:0 auto` 改为 `position:absolute;left:50%;top:50%;
-    transform:translate(-50%,-50%)`，居中在整个视口而不是两侧项目之间
-  - `.brand` 和 `.admin` 加 `flex-shrink:0`，`.search` 加 `max-width:38%`
+# v4.3.8（2026-10-02）重打包
 
-## v2.0.7（2026-09-24）
+- 同日中间重打包版本（内容同 4.3.7 基线）。
 
-- **修复：后台采集同步页 tab-logs 结构 bug**
-  - 第 783 行 `<div ` 标签残缺（无属性、无收尾 `>`）吞掉了后面所有 tab
-  - 第 815 行 `tab-users` 缺 `<div ` 前缀，把 id/class 当字面文本渲染
-  - 修复后 div 标签 124/124 平衡
-- 顶栏 sub 单行显示 + 字号 13.5px（避免换行）
+# v4.3.7（2026-10-02）详情页改版起点
 
-## v2.0.6 ~ v2.0.0（2026-09-24）
-
-- 详见 `CHANGELOG.md` 归档版本
+- 详情页信息块与头部布局重构起点；发布流水线切换到 Node 打包器。
 
 ---
 
-以下为更早期归档版本（v1.8.x / v1.9.x）：
+<!-- 更早的历史版本（v3.x ~ v4.3.6）见归档记录 -->
 
-## v1.8.9（2026-09-23）
+# v3.7.2（2026-09-26）详情页导演/演员信息块美化 + 点击跳人物页
 
-- 新增书籍/音乐类型（book/music），扩展分类系统
-- 后台新增「用户中心」tab，支持用户管理（列表/启用禁用/编辑/删除）
-- 新增图片本地下载功能：新增条目时可勾选自动下载海报/背景图到服务器
-- 创建 uploads/ 目录及 .htaccess 安全配置
-- 提供 __migrate_189.php 数据库迁移脚本
 
-## v1.8.8（2026-09-23）
 
-- **新增：首页首屏「热门标签云」（替换原 banner）**
-  - **数据**：聚合 `media_items.genres`，按「该标签下所有条目的 `clicks` 之和」降序，取前 **50** 个；
-    新增 `Core\CacheStore::hotTags($limit)` 与 `cmpHotTag()` 比较器（PHP 5.6 兼容，不用飞船运算符）。
-  - **交互**：默认每个标签在自己的位置附近缓慢漂浮（每 2.8s 重新抖动一次坐标 + 2.8s 过渡 = 持续游动）；
-    **鼠标移入整块区域 → 停止漂浮、按热度（DOM 顺序）排成整齐标签墙**，移出恢复漂浮；
-    触屏设备没有 hover，改为点空白处切换（点标签本身仍然跳转）。
-  - **点击标签 → `/?tag=<标签>`**：`listBySort()` / `countItems()` 新增 `$tag` 参数，
-    用 `genres LIKE '"标签"'`（带引号）精确匹配 JSON 数组元素，避免子串误命中；
-    新增 `likeEsc()` 转义 LIKE 通配符。列表页顶部显示「当前标签 + 清除标签」，
-    排序 / 分类 / 翻页链接都会带上 `&tag=`，切换筛选不会丢标签条件。
-  - **视觉**：字号按热度分三档（前 8 名 17.5px / 9~22 名 15px / 其余 13.5px）；
-    布局用「行装箱 + 随机抖动」（间距 12px、抖动 ±6/±5px），保证任意两个标签不重叠、不越出容器；
-    舞台高度由 JS 实测行数后写死，手机端只显示前 **24** 个（50 个会把首屏占满）。
-  - **保留**：原 `h1` 以 `.sr-only` 形式保留（不破坏 SEO 与页面语义）；
-    列表页 / 搜索页 / 标签页 / 翻页**仍显示原来的标题 + 统计徽章**，只有真首页换成标签云。
-  - 系统「减少动态效果」（`prefers-reduced-motion`）下不漂浮，直接显示排列好的静态标签墙。
-- **修复（顺带）：「最新更新」列表里混进了一段 CSS 源码**
-  - `homeHtml()` 拼接 `$latestHtml` 时误把 `.adm-btn` 的 4 行 CSS 写进了字符串里，
-    开启「最新更新」后会把这段 CSS 当纯文本显示在页面上；现已移回 `css()`。
-- **影响面**：前端视图 + 查询参数，**无数据库结构变更、无路由变更、无需改 Nginx**；
-  条目数据、已保存的设置、外部 API 令牌调用全部不受影响（`/api/v1/*` 未改动）。
+- 「XX信息」块中的**导演 / 演员**字段改为**可点击人名胶囊**：点导演进 `/person/director/`、点演员进 `/person/actor/` —— 与后台「点人名按标签筛条目」行为一致。
+- 顿号 / 逗号分隔的多位演员拆成独立胶囊，hover 高亮；其余字段（出品方 / 集数等）样式不变。
+- php82 lint **61/61**、内联 JS 8/8、人名胶囊单测通过；三方逐字节一致。
+- 发布包：`发布包/media-library-api-v3.7.2.zip`；升级包：`升级包/media-library-api-update-v3.7.1-to-v3.7.2.zip`。
+
+
 
 ---
 
-## v1.8.7（2026-09-23）
 
-- **修复：后台勾选「启用哪些数据源」保存后，仍提示「请至少启用一个数据源（TMDB / RAWG / Bangumi）」**
-  - **根因**：前端把勾选结果作为 JSON **数组**提交（`adapters: ['tmdb','rawg','bangumi']`），
-    而 `Core\Settings::strToList()` 只做了一次 `(string) $s` 强转 —— PHP 把数组转成字面量
-    `"Array"`，于是白名单过滤后为空，校验必然失败。**与账号 / 密码 / 数据源本身都无关。**
-  - 修法：`strToList()` 增加数组分支（先经 `listToStr()` 归一化），并保持对逗号字符串的兼容。
-- **修复（同类）：站点设置里的多选字段保存后被静默清空**
-  - `nav_show`（顶部导航显示）、`pan_group`（要管理哪些网盘）、`pansou_types`（启用哪些网盘类型）
-    三个多选字段，保存时落到通用分支的 `is_array() ? '' : …` 判断上 → 被当成空字符串，
-    而 `Settings::set()` 里 `''` 表示「清除覆盖」→ 勾选被丢弃、静默退回 `config.php` 默认值。
-  - 修法：保存时按 `schema()` 的 `type === 'list'` 命中列表型字段，改走 `listToStr()` 落库。
-- **修复（连带）：站点设置各页不回显当前值**
-  - `settingsView()` 此前只构建了 API Key / 数据源 / 网盘类型 / 采集 / 邮件这几组的 items，
-    `site` / `seo` / `redirect` / `pan` / `pansou` / `req` 各组从未构建 → 前端拿不到「当前值」，
-    表现为输入框打开即空白、勾选框永远不勾；保存时还会把没动过的字段一起写成空值（= 清掉覆盖）。
-  - 修法：按 `Core\Settings::groupMaps()` 统一补齐每组 items（列表型给出数组形态的 value），
-    `sync` / `mail` 两组保留原有带 `default` 兜底的实现，不覆盖。
-- **影响面**：纯后端逻辑与视图数据，**无数据库结构变更、无路由变更、无需改 Nginx**；
-  已保存过的 `app_settings` 行不受影响（本次只是让它们能被正确读出与写回）。
+
+# v3.7.1（2026-09-26）首页标签云恢复漂浮模式（三类标签混入同一云）
+
+
+
+- **三类标签混入同一标签云**：常规标签（全量类型标签，已过滤人名）+ 热门导演（前 16）+ 热门演员（前 16），不再分三组平铺。
+- **显示模式恢复原设计**：未悬停标签**随机乱飘**；鼠标悬停按**前 50 个最热**顺序排成整齐标签墙（手机端显示前 24 个）。
+- 标签池按热度（点击，无点击用条目数）降序取前 50；常规标签点进 `/tag/`，导演 / 演员点进 `/person/`。
+- php82 lint **61/61**、内联 JS 8/8、池子排序单测通过；三方逐字节一致。
+- 发布包：`发布包/media-library-api-v3.7.1.zip`；升级包：`升级包/media-library-api-update-v3.7.0-to-v3.7.1.zip`。
+
+
 
 ---
 
-## v1.8.6（2026-09-23）
 
-- **修复：后台登录「输入账号密码没反应 / 提交后又跳回登录页」**
-  - `admin/index.php` 本文件就是后台登录页（合法入口），此前若 Nginx 把 `/admin/` 直接落到该文件，
-    会被文件内的 `ml_guard_shield(__FILE__)` 误判为「内部文件」而返回 404；现已在本文件顶部补
-    `ML_APP` / `ML_ROOT` 定义，两条访问路径（经根 index.php 分发、直接定位到本文件）都能正常打开；
-  - 新增 `core/Session.php` 统一会话引导，`admin/index.php` 与 `User::boot()` 共用：
-    · `session.save_path` 目录不存在 / 不可写（宝塔上该目录常属 root，php-fpm 属 www）时，
-      自动改用系统临时目录下的 `ml_sessions`，失败还会再换一次；
-    · 反代（宝塔 / CDN）下 `$_SERVER['HTTPS']` 为空时，按 `X-Forwarded-Proto` 判定真实协议，
-      避免 cookie 被标成 `Secure` 后浏览器直接丢弃 → 每次请求都是新会话；
-    · 会话真的不可用时，登录页会明确提示原因，不再静默失败；
-  - 登录蜜罐字段由 `website` 改为 `ml_hp`：`website` 是浏览器 / 密码管理器的高频自动填充字段，
-    被填上就会命中「检测到异常提交，已忽略」，表现出来正是「点了登录没反应」；
-  - 登录提交增加容错：即使 `ad_do` 等隐藏字段被代理 / 扩展吃掉，只要带了账号密码仍按登录处理；
-  - `check.php` 的「会话（登录状态）」一栏同步显示是否已自动改用可写目录。
-- **新增：随包自救 / 排障工具（排障用完请删）**
-  - `__diag.php`：一键体检 —— 会话是否存得住（含往返测试）、入口分发、数据库账号（状态 / 锁定 /
-    散列长度）、给定账号密码的校验结果与管理员判定，直接给出结论与对应处理；
-  - `__emergency_reset.php`：由「只改密码」升级为「**改密码 + 解除锁定 + 账号状态复位**」，
-    支持用**账号或邮箱**匹配，并且**成功后自动删除自身**，避免留下后门；
-  - `core/Guard.php` 守卫清单与 `check.php` 必查文件加入 `core/Session.php`。
-- **升级提示**：本版无数据库结构变更；覆盖升级后请 `Ctrl+F5` 强刷后台登录页。
+
+# v3.7.0（2026-09-26）短剧官方热度采集 + 热度显示顺序修正
+
+
+
+- 红果适配器新增**官方热度**字段采集（`heat_count`，兼容 heat / heat_score / heat_value / hot / popularity 等字段名）——官方详情页顶部的「399万热度」即此值，与播放量 play_count 是两码事。
+- 短剧**热度显示顺序修正**：官方热度 → 点赞 → 播放量 → TMDB 热度；点击仍为收藏数、评分照旧。
+- 解决「后台热度 965 对不上官方 399万」的问题（965 是旧 play_count，现优先取官方热度）；存量短剧重新同步一次即补齐。
+- php82 lint **61/61**、内联 JS 8/8、热度链单测通过；三方逐字节一致。
+- 发布包：`发布包/media-library-api-v3.7.0.zip`；升级包：`升级包/media-library-api-update-v3.6.9-to-v3.7.0.zip`。
+
+
 
 ---
 
-## v1.8.5（2026-09-23）
 
-- **紧急修复：管理员密码重置工具确认随包发出**
-  - v1.8.4 整包已含 `__emergency_reset.php`，本次重新打包确认无误；
-  - 修复 build 脚本漏发问题，把诊断/维护类 PHP 加进 must 集合。
 
-- **修复：版本号从 v1.8.4 升到 v1.8.5**
+# v3.6.9（2026-09-26）前台首页首屏改版：标签云 → 三大组
 
----
 
-## v1.8.4（2026-09-23）
 
-- **紧急修复：管理员密码重置脚本 + 诊断工具随包发出**
-  - 用户在 v1.8.3 全新安装后「无法登录」后台；
-  - 新增 `__emergency_reset.php`（一次性密码重置脚本）：用邮箱+新密码直接改 app_users.pass_hash，跑完删掉；
-  - 把这类工具加进 build 脚本的 must/expect 集合，防止下次漏发。
+- 首页首屏由「重叠热门标签云」改为**三大组分类展示**（与后台标签项目页同构）：
+  🏷️ 常规标签（全部类型标签，已过滤人名）· 🎬 热门导演（前 16）· ⭐ 热门演员（前 16）。
+- **标签不完整问题解决**：常规标签显示全部，不再只取 50 个热门混排；类型标签与人名标签彻底分区，点类型进 `/tag/`、点人名进 `/person/`。
+- 新增 `CacheStore::regularTags()`（全部类型标签过滤人名，600 秒缓存）；旧重叠标签云 JS 区块退役（条件恒 false 不输出）。
+- php82 lint **61/61**、内联 JS 8/8、三组 pill 单测通过；三方逐字节一致。
+- 发布包：`发布包/media-library-api-v3.6.9.zip`；升级包：`升级包/media-library-api-update-v3.6.8-to-v3.6.9.zip`。
+
+
 
 ---
 
-## v1.8.3（2026-09-23）
 
-- **修复：MySQL 5.6 全新安装建表报 1089**
-- **调整：注册账号一律用邮箱**
 
----
+# v3.6.8（2026-09-26）后台标签项目页再调整
 
-## v1.8.2（2026-09-23）
 
-- **邮件服务（SMTP）+ 密码找回 / 修改（全新功能）**
 
----
+- **「剧情」回归常规标签**：不再单独成「剧情类」分组，与其它类型标签一起进「🏷️ 常规标签」网格。
+- **人名标签从常规网格移除**：导演 / 演员名字自动过滤（全库人物名集合 600 秒缓存，服务端 `GET /api/v1/admin/tags` 过滤），人名只在「🎬 热门导演」「⭐ 热门演员」区块出现。
+- 不改表结构、不改既有接口。php82 lint **61/61**、内联 JS 8/8、人名过滤单测通过；三方逐字节一致。
+- 发布包：`发布包/media-library-api-v3.6.8.zip`；升级包：`升级包/media-library-api-update-v3.6.7-to-v3.6.8.zip`。
 
-## v1.8.1（2026-09-23）
 
-- **后台数据源测试修复**
 
 ---
 
-## v1.8.0（2026-09-23）
 
-- 后台登录改为账号 + 密码
+
+# v3.6.7（2026-09-26）短剧数据补全：点赞=热度、收藏=点击
+
+
+
+- **显示口径**（站长定调）：短剧 热度 = 点赞数（无点赞回退播放量 / TMDB 热度）、点击 = 收藏数，**评分照旧**；详情页与卡片同时生效，前端不再用本地点击数覆盖短剧收藏显示。
+- **红果采集增强**：新增点赞（`praise_count`）、收藏（`favorite_count`）采集（兼容 praise/like/thumb/collect/favorite 等字段名）；有显式导演字段时也收 `director`。
+- **标签采集增强**：`sub_title_list` 里 data_type=3 的分类全部收进 genres（不再卡白名单，只做乱码过滤，最多 12 个）。
+- **演员解析增强**：兼容 starring / actor_list / cast 等显式演员字段，名字长度放宽到 2~12 字。
+- **存量回填**：新增 `tools/backfill_short_actors.php`（`--dry` 预览 / `--limit` 分批 / `--sleep` 限频）。
+- php82 lint **61/61**、内联 JS 8/8、统计口径单测 8 组全过；三方逐字节一致。
+- 发布包：`发布包/media-library-api-v3.6.7.zip`（69 文件）；升级包：`升级包/media-library-api-update-v3.6.6-to-v3.6.7.zip`。
+
+
+
+---
+
+
+
+# v3.6.6（2026-09-26）后台标签项目页改版
+
+
+
+- **三个项目顺序**调整为：🏷️ 常规标签 → 🎬 热门导演 → ⭐ 热门演员。
+- **剧情类单独一组分类**：「剧情」标签独立成「🎭 剧情类」，其余标签进「🏷️ 常规标签」。
+- **热门导演 / 热门演员卡片美化**：与标签网格一致的卡片样式（人名 + 数量徽章），点击人名仍按标签筛选条目。
+- 不改表结构、不改既有接口。php82 lint **60/60**、内联 JS 8/8；三方逐字节一致。
+- 发布包：`发布包/media-library-api-v3.6.6.zip`；升级包：`升级包/media-library-api-update-v3.6.5-to-v3.6.6.zip`。
+
+
+
+---
+
+
+
+# v3.6.5（2026-09-26）长标题单行 + 悬停滚动
+
+
+
+- 卡片标题改为**单行不折行**：超长部分隐藏，不再把标题拆成两行（如「…种田爽翻天」）。
+- 鼠标悬停到超长标题上，标题**横向滚动**（无缝循环）显示完整；悬停在标题上会暂停便于细看；标题不超长时行为不变。
+- 列表页 / 标签页 / 人物页卡片全部生效。纯前台样式调整，不改表结构、不改接口。
+- php82 lint **60/60**、内联 JS 8/8、cardHtml 结构冒烟通过；三方逐字节一致。
+- 发布包：`发布包/media-library-api-v3.6.5.zip`；升级包：`升级包/media-library-api-update-v3.6.4-to-v3.6.5.zip`。
+
+
+
+---
+
+
+
+# v3.6.4（2026-09-26）前台排序/筛选工具条水平居中
+
+
+
+- 前台列表页顶部「排序 + 分类筛选」工具条整体**水平居中**（`.toolbar` 加 `justify-content:center`）。
+- 手机端保持**从左侧起横向滑动**（`flex-start`），不截断左边内容，触控体验不变。
+- 纯样式调整：不改表结构、不改接口。php82 lint **60/60**、内联 JS 7/7；三方逐字节一致。
+- 发布包：`发布包/media-library-api-v3.6.4.zip`；升级包：`升级包/media-library-api-update-v3.6.3-to-v3.6.4.zip`。
+
+
+
+---
+
+
+
+# v3.6.3（2026-09-26）热门人物区块迁入后台标签页
+
+
+
+- 首页「热门导演 / 热门演员」区块**移除**（前台只保留类型标签云；`/person/` 人物页仍可用）。
+
+- **后台「标签项目」页顶部**新增两排人名胶囊：点击人名即在条目管理中按该人作为标签筛选（v3.6.0 起人名已并入 genres 列，天然复用标签筛选）。
+
+- 新增后台接口 `GET /api/v1/admin/hot-people`（数据与前台 hotPeople 同源，600 秒缓存）。
+
+- 不改表结构、不改既有接口。php82 全量 lint **60/60**、内联 JS 7/7；三方逐字节一致。
+
+- 发布包：`发布包/media-library-api-v3.6.3.zip`；升级包：`升级包/media-library-api-update-v3.6.2-to-v3.6.3.zip`。
+
+
+
+---
+
+
+
+# v3.6.2（2026-09-26）前台顶栏调整
+
+
+
+- **提示语移入顶栏**：站点 slogun（原在 banner 顶部居中）缩小一号字移到顶栏、与站名同排右侧（`.tslogan`，过长省略号保护），banner 不再重复显示。
+
+- **顶栏布局重排**：搜索框改为流式布局，与站名 / 提示语 / 按钮弹性排在同一行，不再绝对定位悬浮；窄屏自动收缩。
+
+- **隐藏登录用户邮箱**：顶栏不再显示用户名 / 邮箱，只保留「我的请求」「退出」。
+
+- 不改表结构、不改既有接口。php82 全量 lint **60/60**、内联 JS 7/7；三方逐字节一致。
+
+- 发布包：`发布包/media-library-api-v3.6.2.zip`；升级包：`升级包/media-library-api-update-v3.6.1-to-v3.6.2.zip`。
+
+
+
+---
+
+
+
+# v3.6.1（2026-09-26）修复：exec 禁用时同步崩溃 + 卡片指标条改版
+
+
+
+- **修复同步崩溃**：宝塔 php 默认禁用 `exec` 时，`core/Sync.php` 后台启动延迟网盘匹配会抛 `Call to undefined function Core\exec()`，整个同步失败。改为两段式：exec 可用照旧后台启动；被禁时把新入库条目 id 写入 `config/pan_pending.txt` 队列，由 `cron/pan_match_delayed.php --from-pending --delay=0`（计划任务，建议每 5 分钟）消费 —— 功能不丢、同步不再炸。
+
+- **卡片指标条改版**：评分 / 热度 / 点击横向一排、三等分等宽（超长省略号），不再折成两排；热度取整显示（513.29 → 513），9999 以上短化为 12K 这类无小数形式（热度路径不再依赖 formatCount，顺带规避其 9999 以上单位阈值误判隐患）。
+
+- 不改表结构、不改既有接口。php82 全量 lint **60/60**、内联 JS 7/7、热度逻辑单测 6 组全过；三方逐字节一致。
+
+- 发布包：`发布包/media-library-api-v3.6.1.zip`；升级包：`升级包/media-library-api-update-v3.6.0-to-v3.6.1.zip`。
+
+
+
+---
+
+
+
+# v3.6.0（2026-09-26）数据层：演员/导演并入标签列
+
+
+
+- 三条写入路径（同步入库 / 手动录入 / 后台编辑）在写 `genres` 时自动合入**导演（≤3）+ 主演（≤6）**人物标签，去重后与类型标签同列存储 —— 标签云、`/tag/` 标签页、卡片标签原生出现演员/导演，点人名即可筛作品。
+
+- 新增存量回填脚本 `tools/backfill_people_tags.php`：`--dry` 预览 / 幂等可重复跑 / 不动 `updated_at` / 跑完自动推进标签缓存版本。
+
+- 编码口径与 `genresEnc` 完全一致（不转义斜杠、兼容逗号串与 JSON 串），既有标签匹配不受影响；不改表结构。
+
+- v3.5.9 的首页热门人物区块与 `/person/` 人物页继续保留。
+
+- php82 全量 lint **60/60**、内联 JS 7/7、合并逻辑单测 5 组全过（含幂等与斜杠口径）；三方逐字节一致。
+
+- 发布包：`发布包/media-library-api-v3.6.0.zip`（68 文件）；升级包：`升级包/media-library-api-update-v3.5.9-to-v3.6.0.zip`。
+
+
+
+---
+
+
+
+# v3.5.9（2026-09-26）新增：热门导演 / 热门演员
+
+
+
+- **首页标签云下方**新增「🎬 热门导演」「⭐ 热门演员」两个区块：按该人全部已入库作品的点击之和排序（各取前 16，600 秒缓存），数据来自条目 `extra` 的 cast / director，刮削或拉详情后自动充实。
+
+- **新增人物作品页** `/person/director/{姓名}`、`/person/actor/{姓名}`：复用首页卡片网格与排序 / 类型筛选 / 翻页；提示条显示「已入库作品 N 部」。
+
+- 匹配为参数化 LIKE 预筛 + JSON 精确核对（"张三丰"不会混入"张三"）；无演职员数据的条目不进榜、不报错。
+
+- 不改数据库表结构、不改既有接口。php82 全量 lint 59/59、内联 JS 7/7、personNames 单测 5 例全过；三方逐字节一致。
+
+- 发布包：`发布包/media-library-api-v3.5.9.zip`；升级包：`升级包/media-library-api-update-v3.5.8-to-v3.5.9.zip`。
+
+
+
+---
+
+
+
+# v3.5.8（2026-09-26）修复：安全防护页守卫误报
+
+
+
+- 「内部 PHP 文件反直接访问守卫」不再把 `track.php` 报成「未加守卫 / 待处理」：它是公开埋点端点（旧静态页直接请求 `/track.php?id=N`），设计上不加反直接访问守卫，已从 `core/Guard.php` 应有守卫清单移出。
+
+- 安全页恢复「30 个内部文件均已带守卫」全绿；track.php 本体与埋点行为零改动。
+
+- php82 lint 全量通过 + `ml_guard_status()` CLI 冒烟实测 missing=[]；整包/升级包/发布版本三方逐字节一致。
+
+- 发布包：`发布包/media-library-api-v3.5.8.zip`；升级包：`升级包/media-library-api-update-v3.5.7-to-v3.5.8.zip`。
+
+
+
+---
+
+
+
+# v3.5.7（2026-09-26）后台体验调整
+
+
+
+- **自动刮削页**：移除 v3.4.8 历史说明文字；面板新增「失败数量（最近一次）」统计项（无失败灰色 0，有失败红色高亮，「清除结果」一并归零）。
+
+- **安全防护页**：移除「网页版安装器 install.php」提示行（安装锁状态仍由 `config/install.lock` 行体现，安装类残留文件告警保留）。
+
+- 不改接口、不改数据库、不改配置；php82 全量 lint 59/59 通过，内联 JS 校验 7/7 通过。
+
+- 发布包：`发布包/media-library-api-v3.5.7.zip`（67 文件）；升级包：`升级包/media-library-api-update-v3.5.6-to-v3.5.7.zip`（全量覆盖，含 `UPGRADE.md` / `UPGRADE.txt`）。
+
+
+
+---
+
+
+
+# v3.5.6（2026-09-26）安全加固发版
+
+
+
+- **TMDB 兼容代理**：`proxy.require_key` 配置真正生效（`?api_key=` / `X-Api-Key` 校验，proxy_key 留空回退站点 TMDB Key）；新增每 IP 分钟级限流（`proxy.rate_per_min`，默认 60）；search / trending / genre / configuration 补短缓存；genre 路由白名单只允许 movie / tv。
+
+- **SSRF 拦截**：新增 `core/UrlSafe`（协议白名单 + 内网 / 保留地址 / 元数据 IP 拦截）；管理员「图片下载到本地」与链接失效检查 HTTP 兜底均已接入；图片下载另加 5MB 上限、10 秒超时、魔数识别；cURL 出网（含重定向）钉死 http/https。
+
+- **API 令牌**：改存 sha256 哈希（明文仅创建时出现一次），老明文令牌首次校验懒迁移。
+
+- **性能**：自动建表加就绪标记短路（`config/.ml_ready_*`）；文件缓存改 JSON（`J:` 前缀），不再默认 unserialize。
+
+- **运维**：新增 `cron/api_logs_prune.php`（API 流水按保留期清理，默认 90 天）。
+
+- 发布包：`发布包/media-library-api-v3.5.6.zip`（67 文件）；升级包：`升级包/media-library-api-update-v3.5.5-to-v3.5.6.zip`（全量覆盖，含 `UPGRADE.md` / `UPGRADE.txt`）。
+
+- 无表结构变更、无接口行为变化；老站点整包覆盖即得全部加固。
+
+
+
+---
+
+
+
+# v3.5.5（2026-09-26）版本登记
+
+
+
+- 版本号唯一来源：`core/Version.php`（`ML_APP_VERSION = '3.5.5'`），`index.php` / `admin/index.php` / `install.php` 统一引用，取不到显示「未同步」，不再各自硬编码。
+
+- 发布包：`发布包/media-library-api-v3.5.5.zip`；升级包：`升级包/media-library-api-update-v3.5.4-to-v3.5.5.zip`（v3.4.9→v3.5.0 起的各增量包均在升级包目录）。
+
+- 门面文档（README / 功能说明 / 安装说明 / 资料索引 / GitHub 推送说明）版本号已全部同步至 v3.5.5。v3.4.5~v3.5.5 的功能变更明细以 `功能说明.txt` / `安装说明.txt` 为准。
+
+- 升级到本版：整包覆盖即可；不需要导入 SQL，不需要修改 Nginx。升级后确认 `core/Version.php` 已随包上传。
+
+
+
+---
+
+
+
+# 历史：v2.2.1 → v2.2.8 升级说明
+
+> ⚠️ **本版是全量覆盖升级（61 个文件），不是增量包。**
+> 原因：从本版起，发布版本的 PHP 全部经过**免费防破解混淆**
+> （去注释 + 压缩空白 + 局部变量改名）。明文文件与混淆文件混在一起会出问题，
+> 所以只能整包覆盖。包内容与同期**整包**完全一致。
+
+---
+
+## 一、升级前必读
+
+| 项 | 结论 |
+|---|---|
+| 数据库 | **无表结构变更，不用导任何 SQL** |
+| 数据库配置 | 包里**不含** `config/config.php`，覆盖不会重置库信息 |
+| 安装状态 | 包里**不含** `config/install.lock`，不会被判定成未安装 |
+| 后台设置 | Key / 数据源 / 网盘 / SEO 等存在 `app_settings` 表，优先级高于 `config.php`，**覆盖不丢** |
+| 外部 API 令牌 | `app_api_tokens` / `app_api_logs` 两表不受影响 |
+| 伪静态 | 无需改动 |
+| 排障脚本 | `__diag.php` / `__emergency_reset.php` / `__migrate_189.php` / `check.php` **不再随包发布**，需要时从「软件素材/」单独取，**用完请删** |
+
+---
+
+## 二、升级步骤
+
+1. 解压本包 —— 解压出来**就是站点根的目录结构**，没有多余的外层目录。
+2. 宝塔 →「文件」→ 站点根目录 → **全部覆盖上传**。
+3. **保留不动**（包里本来就不含）：`config/config.php`、`config/install.lock`、`uisc/`、`uisc-assets/`。
+4. 确认站点根 `index.php` 里的 `ML_APP_VERSION` 已变为 `2.2.8`。
+5. 后台按一次 **Ctrl + F5** 强刷（前端脚本有缓存）。
+
+---
+
+## 三、本版改了什么
+
+**功能与修复**
+
+- 移除 Bangumi（动漫）源，改为「红果短剧」代理源；修掉「勾了也采不到数据」
+  （采集引擎漏加载适配器、端点指向 Bangumi 旧路径、适配器缺 `trendingFetch()`、响应解包错层）。
+- 修掉后台用户中心「点了没反应」（`const` 重复声明导致整段脚本解析失败）
+  与「编辑用户永远提示用户不存在」（接口返回 `items`，前端读成 `users`）。
+- 用户中心新增可改用户名 / 邮箱 / 管理员标记，带防自锁。
+- 自动刮削补图：`SELECT` 补上 `poster` / `backdrop` 字段。
+- 分类补齐「书籍 / 音乐 / 其他」，共 **9 类**。
+- 安装器默认数据源与白名单补上红果短剧。
+- 修掉 6 个目录拒访页与 `config/config.sample.php` 的语法错误（会导致访问 / 安装直接 500）。
+- 首页热门标签云去掉底部说明文字。
+
+**PHP 8.2+ 基线统一与版本号同步**
+
+- `core/Installer.php` / `tools/install-cli.php` 的 `version_compare` 从 5.6.0 提升到 8.2.0。
+- `install.php` 版本 fallback 从 2.2.0 同步到 2.2.8。
+- `index.php` / `admin/index.php` 版本号同步到 2.2.8。
+- `check.php` 用户提示文案从 "5.6 以上" 改为 "8.2 以上"。
+- 全部文档（README / CHANGELOG / 功能说明 / 安装说明 / 资料索引）版本与 PHP 基线同步。
+
+**发布形态变更**
+
+- 发布版本**不含任何测试 / 诊断脚本**。
+- 发布版本的 PHP **全部经过免费防破解混淆**（类名 / 函数名 / 方法名 / 常量 / 字符串 / 类属性名不动）。
+- 明文可读可改的源码仍在「原始源码/」。
+
+---
+
+## 四、验证
+
+- 首页能正常打开（**PHP 8.2+ 环境下**）；
+- 后台 →「同步采集」点一次，红果短剧能出数据；
+- 后台 →「用户中心」能打开、能编辑用户；
+- 分类下拉里能看到 书籍 / 音乐 / 其他。
+
+需要环境自检时：把 `软件素材/check.php` 单独传到站点根，访问 `/check.php`
+（管理员登录态，或从服务器本机访问；**未授权一律 404**），看完删掉。
+
+---
+
+## 五、回滚
+
+把上一版整包 `media-library-api-v2.2.1.zip`（明文版）重新覆盖回去即可。
+数据库无需回滚；混淆版与明文版只是文件形态不同，互相覆盖都不会残留。
