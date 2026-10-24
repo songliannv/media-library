@@ -1,2 +1,0 @@
-<?php
-require_once __DIR__.'/../core/Guard.php';ml_guard_shield(__FILE__);require_once __DIR__.'/../core/Config.php';require_once __DIR__.'/../core/DB.php';require_once __DIR__.'/../core/CacheStore.php';require_once __DIR__.'/../core/Views.php';require_once __DIR__.'/../core/StaticGen.php';use Core\StaticGen;$a=StaticGen::buildAll();fwrite(STDOUT,"built static pages: ".$a.PHP_EOL);

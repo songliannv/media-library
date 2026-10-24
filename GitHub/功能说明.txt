@@ -1,0 +1,85 @@
+媒资资料库 · v4.5.1 功能说明
+更新时间：2026-10-02
+运行基线：PHP 8.2+、MySQL 5.7+、Nginx
+
+一、系统定位
+
+本项目是一个可部署到宝塔面板的 PHP + MySQL 媒资资料库，包含公开前台、后台管理、统一 API、TMDB 兼容代理、数据同步、静态页生成、用户资源请求和外部 API Token 管理。
+
+
+v4.5.x 新增 / 变更能力：
+
+- 网盘自动转存：夸克 / UC 扫码登录 Cookie 后，条目里别人的分享自动转存为站长自己的分享链接（后台「站点设置 → 添加网盘」配置；计划任务 cron/pan_transfer.php 可批量跑）。
+- 图片代理改名 pic.php（原 img.php 被部分主机安全规则按文件名拦截）；代理失败自动回退直连 TMDB；img.php 保留兼容壳。
+- 演职员头像百度百科补齐：短剧等来源缺头像时按姓名自动补图并落盘 uisc-assets/people/，一次补齐永久使用。
+- 后台右上角「清除缓存」一键清空全部缓存。
+- 详情页改版：标题+类型+指标同排右对齐、简介入头部、正文 1.5 倍、导演 1/3 演员 2/3、导演行常驻（空显示暂无）。
+- 已下线：首页跳转/扫码拦截、前台水印；季数/集数/出品方/地区/短剧时长等字段不再采集与展示。
+
+当前有效数据源只有：
+
+- TMDB：电影、电视剧、综艺等影视资料。
+- 红果短剧（HongguoDuanju）：国产短剧资料。
+
+历史数据源不属于当前功能，不应再配置、采集或写入新文档。
+
+二、安装与数据库
+
+网页安装器 install.php 与命令行安装器 tools/install-cli.php 共用 core/Installer.php。全新安装直接创建：
+
+1. media_items：媒体条目、评分、热度、投票数、演职人员和下载链接。
+2. sync_log：同步任务记录。
+3. link_checks：网盘链接检测记录。
+4. app_settings：后台覆盖设置。
+5. app_users：用户和管理员账号。
+6. app_requests：用户资源请求。
+7. app_api_tokens：外部 API 调用令牌和每日限额。
+8. app_api_logs：外部 API 调用流水。
+
+安装完成后生成 config/config.php 和 install.lock，安装器自动失效。后台首次使用的管理员账号和密码在安装时创建。
+
+三、前台功能
+
+- 条目管理：只展示 status=active 的正式条目。
+- 条目暂存：pending 条目进入暂存，不生成正式静态页。
+- 自动刮削：根据标题、年份和 TMDB ID 匹配 TMDB 或红果短剧资料。
+- 采集字段：评分、热度、投票数、年份、演员、导演、简介、海报和背景图。
+- 下载地址：支持多个网盘标签和链接，手工地址不会被自动补地址覆盖。
+- 搜索、分类、排序、标签和静态详情页。
+- 用户注册、登录、密码找回和资源请求。
+
+本地导入、手动录入和搜索得到的条目默认进入 pending。匹配成功或手动转化后才变为 active，并生成静态详情页。
+
+四、后台功能
+
+- 条目管理和条目暂存。
+- TMDB / 红果短剧同步采集。
+- 站点基础信息、SEO、前台模板、网盘账号和 PanSou 配置。
+- 资源请求和注册用户管理。
+- API 调用页：创建、禁用、限额、IP 白名单和调用日志。
+- 账号密码登录、统一会话、CSRF、失败锁定和管理员权限。
+
+后台使用管理员账号和密码登录。API Token 只给外部调用者使用，不用于登录后台。
+
+五、采集与静态页
+
+同步引擎支持热门榜、最多人看、请求预算、最小间隔、同源去重和跨源同名去重。采集成功的新条目直接生成静态页；刮削或补地址后会重新生成对应页面。
+
+计划任务脚本位于 cron/，包括每小时同步、刷新、静态页构建、链接检测、API 日志清理和限流清理；请以当前发布包内脚本为准。
+
+六、安全与部署
+
+- PHP 8.2+ only。
+- config、sql、core、adapters、cron、tools 目录禁止公网直接访问。
+- 内部 PHP 使用 Guard.php 直接访问守卫。
+- Nginx 使用 try_files 统一转发动态路由。
+- 安装器写入 install.lock 后自锁。
+- 发布包不含运行时配置、安装锁、preview、诊断脚本、历史迁移 SQL 或说明文档。
+- 发布版本是 AST 混淆源码，不是 ionCube 或 SourceGuardian 编码加密。
+
+七、当前发布验收重点
+
+- core/Installer.php、sql/install.sql、core/User.php、core/ApiToken.php 的建表结构一致。
+- app_users.is_admin、app_users.idx_lock、sync_log.idx_created_at、app_api_tokens.daily_count 和 daily_date 均在初始结构中存在。
+- Guard.php 返回的 install_present、install_locked、install_active、install_ghosts 与 check.php 一致。
+- 发布版本、全量 ZIP、全量覆盖升级 ZIP 三方文件集合和字节一致。
