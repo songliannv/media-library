@@ -1,22 +1,23 @@
 <?php
-namespace Core;require_once __DIR__.'/Guard.php';ml_guard_shield(__FILE__);require_once __DIR__.'/Config.php';require_once __DIR__.'/Settings.php';require_once __DIR__.'/Categories.php';require_once __DIR__.'/Site.php';require_once __DIR__.'/User.php';require_once __DIR__.'/Views.php';class UserViews{public static function esc($a){return Views::esc($a);}private static function label($a){return Categories::label($a);}private static function typeOptions($a){$a=(string)$a;$b='<option value="">不限 / 其他</option>';foreach(Categories::TYPES as $c){$b.='<option value="'.self::esc($c).'"'.($c===$a?' selected':'').'>'.self::esc(self::label($c)).'</option>';}return $b;}public static function head($a,$b='',$c=true){$d=Site::info();$e=$d['name'];$f=($a!==''?$a.' - '.$e:$e);$g='<title>'.self::esc($f).'</title>'."\n";if($b!==''){$g.='<meta name="description" content="'.self::esc($b).'">'."\n";}$g.=$c?'<meta name="robots" content="noindex,follow">'."\n":'<meta name="robots" content="index,follow">'."\n";if($d['favicon']!==''){$g.='<link rel="icon" href="'.self::esc(Site::asset($d['favicon'])).'">'."\n";}$h=trim((string)Config::sub('seo','stats_code',''));if($h!==''){$g.=$h."\n";}return $g;}public static function shell($a,$b,$c=true,$d='',$e=''){$f=self::head($a,$e,$c);$g=Views::topbarHtml($d);$h=Views::footerHtml();$i=Views::bodyClass();$j=Views::css().self::ucss();$k=<<<HTML
+namespace Core;require_once __DIR__.'/Guard.php';ml_guard_shield(__FILE__);require_once __DIR__.'/Config.php';require_once __DIR__.'/Settings.php';require_once __DIR__.'/Categories.php';require_once __DIR__.'/Site.php';require_once __DIR__.'/User.php';require_once __DIR__.'/Views.php';class UserViews{public static function esc($a){return Views::esc($a);}private static function label($a){return Categories::label($a);}private static function typeOptions($a){$a=(string)$a;$b='<option value="">不限 / 其他</option>';foreach(Categories::TYPES as $c){$b.='<option value="'.self::esc($c).'"'.($c===$a?' selected':'').'>'.self::esc(self::label($c)).'</option>';}return $b;}public static function head($a,$b='',$c=true){$d=Site::info();$e=$d['name'];$f=($a!==''?$a.' - '.$e:$e);$g='<title>'.self::esc($f).'</title>'."\n";if($b!==''){$g.='<meta name="description" content="'.self::esc($b).'">'."\n";}$g.=$c?'<meta name="robots" content="noindex,follow">'."\n":'<meta name="robots" content="index,follow">'."\n";if($d['favicon']!==''){$g.='<link rel="icon" href="'.self::esc(Site::asset($d['favicon'])).'">'."\n";}return $g;}public static function shell($a,$b,$c=true,$d='',$e=''){$f=self::head($a,$e,$c);$g=Views::topbarHtml($d);$h=Views::footerHtml();$i=Views::bodyClass();$j=defined('ML_APP_VERSION')?ML_APP_VERSION:'1';$k='<link rel="stylesheet" href="'.Views::esc(Views::assetUrl('assets/css/user.css')).'?v='.rawurlencode($j).'">';$l=Views::cssLinks(false,$k,'assets/css/user.css');$m=Views::pageViewJs();$n=Views::pageViewAttr(0);$o=<<<HTML
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 {$f}
-<style>{CSS_PLACEHOLDER}</style>
+{$l}
 </head>
-<body class="{$i}">
+<body class="{$i}"{$n}>
 {$g}
 <div class="u-wrap">
 {$b}
 </div>
 {$h}
+{$m}
 </body>
 </html>
-HTML;return str_replace('{CSS_PLACEHOLDER}',$j,$k);}public static function flashHtml(){$a=User::flashGet();if(!$a){return'';}$b=($a['kind']==='ok')?'ok':(($a['kind']==='info')?'info':'err');return'<div class="u-flash '.$b.'">'.self::esc($a['msg']).'</div>';}public static function registerHtml(array $a=array()){$b=User::cfg();$c='注册账号';$d='<a class="admin" href="/">← 返回主页</a>';if(!$b['open']){$e='<div class="u-card"><div class="u-lock">'.'<div class="ico">🔒</div><h3>暂未开放注册</h3>'.'<p>站长关闭了注册入口。已注册的用户可以直接登录。</p>'.'<a class="u-btn" href="/user/login">去登录</a>'.'</div></div>';return self::shell($c,$e,true,$d);}$f='';if($b['verify']){$g=User::captchaNew();$f='<div class="u-field"><label>验证码 *</label>'.'<div class="u-cap"><span class="q">'.self::esc($g).'</span>'.'<input class="u-in" type="text" name="captcha" inputmode="numeric" autocomplete="off" placeholder="填计算结果" required>'.'</div><div class="tip">防止机器人批量注册，算一下就好。</div></div>';}$h=$b['audit']?'<div class="u-flash info">本站开启了注册审核：提交后需要管理员通过才能登录，请留意站长的回复。</div>':'';$i=isset($a['username'])?(string)$a['username']:'';$j=isset($a['email'])?(string)$a['email']:'';$k=<<<HTML
+HTML;return $o;}public static function flashHtml(){$a=User::flashGet();if(!$a){return'';}$b=($a['kind']==='ok')?'ok':(($a['kind']==='info')?'info':'err');return'<div class="u-flash '.$b.'">'.self::esc($a['msg']).'</div>';}public static function registerHtml(array $a=array()){$b=User::cfg();$c='注册账号';$d='<a class="admin" href="/">← 返回主页</a>';if(!$b['open']){$e='<div class="u-card"><div class="u-lock">'.'<div class="ico">🔒</div><h3>暂未开放注册</h3>'.'<p>站长关闭了注册入口。已注册的用户可以直接登录。</p>'.'<a class="u-btn" href="/user/login">去登录</a>'.'</div></div>';return self::shell($c,$e,true,$d);}$f='';if($b['verify']){$g=User::captchaNew();$f='<div class="u-field"><label>验证码 *</label>'.'<div class="u-cap"><span class="q">'.self::esc($g).'</span>'.'<input class="u-in" type="text" name="captcha" inputmode="numeric" autocomplete="off" placeholder="填计算结果" required>'.'</div><div class="tip">防止机器人批量注册，算一下就好。</div></div>';}$h=$b['audit']?'<div class="u-flash info">本站开启了注册审核：提交后需要管理员通过才能登录，请留意站长的回复。</div>':'';$i=isset($a['username'])?(string)$a['username']:'';$j=isset($a['email'])?(string)$a['email']:'';$k=<<<HTML
 {$h}
 <form method="post" action="/user/register" autocomplete="off">
   <input type="hidden" name="csrf" value="{CSRF}">
@@ -133,165 +134,4 @@ HTML;$f=str_replace(array('{CSRF}','{EMAIL}','{EMAIL_TIP}'),array(self::esc(User
   </div>
   <button class="u-btn" type="submit">提交请求</button>
 </form>
-HTML;$n=str_replace('{CSRF}',self::esc(User::csrf()),$n);$n=str_replace('{TYPES}',self::typeOptions(''),$n);$n=str_replace('{CONTACT}',$p,$n);}$s='';if($d){$s='<div class="u-card"><div class="u-head"><h1 style="font-size:16px">我的请求</h1>'.'<p>共 '.(int)(isset($a['myTotal'])?$a['myTotal']:0).' 条。'.'还没处理的可以自己撤回。</p></div>'.self::reqList(isset($a['myList'])?$a['myList']:array(),true).'</div>';}$t='';if($b['public']&&($d||$b['guest_view'])){$u=self::pager((int)(isset($a['page'])?$a['page']:1),(int)(isset($a['perPage'])?$a['perPage']:20),(int)(isset($a['total'])?$a['total']:0));$t='<div class="u-card"><div class="u-head"><h1 style="font-size:16px">大家都在找</h1>'.'<p>站长按提交顺序处理，已找到的会在这里变成「已找到」。</p></div>'.self::reqList(isset($a['list'])?$a['list']:array(),false).$u.'</div>';}$v=$b['notice']!==''?'<div class="u-flash info">'.User::text($b['notice']).'</div>':'';$w=$g.self::flashHtml().$j.$v.'<div class="u-card">'.$n.'</div>'.$s.$t.self::reqScript();return self::shell($c,$w,true,$e,$f);}private static function reqList(array $a,$b){if(!$a){return'<div class="u-empty">'.($b?'还没有提交过请求。':'还没有人提交请求，你可以是第一个。').'</div>';}$c=User::reqStatusText();$d='<div class="u-list">';foreach($a as $e){$f=(string)(isset($e['status'])?$e['status']:'pending');$g=isset($c[$f])?$c[$f]:'待处理';$h=(int)(isset($e['id'])?$e['id']:0);$i=(string)(isset($e['title'])?$e['title']:'');$j=(string)(isset($e['type'])?$e['type']:'');$k=isset($e['year'])&&$e['year']!==null&&$e['year']!==''?(int)$e['year']:0;$l=(string)(isset($e['created_at'])?$e['created_at']:'');$m=array();if($j!==''){$m[]=self::label($j);}if($k>0){$m[]=$k;}if(!$b&&!empty($e['username'])){$m[]='由 '.User::publicUserLabel($e['username']).' 提交';}if($l!==''){$m[]=substr($l,0,16);}$n=(string)(isset($e['note'])?$e['note']:'');$o=(string)(isset($e['admin_note'])?$e['admin_note']:'');$p=(int)(isset($e['item_id'])?$e['item_id']:0);$d.='<div class="u-item">';$d.='<div class="t">'.self::esc($i).' <span class="u-badge '.User::statusClass($f).'">'.self::esc($g).'</span>'.'</div>';if($m){$d.='<div class="m">'.self::esc(implode(' · ',$m)).'</div>';}if($n!==''){$d.='<div class="n">'.User::text($n).'</div>';}if($b&&$o!==''){$d.='<div class="u-reply"><b>站长回复：</b>'.User::text($o).'</div>';}if($p>0){$d.='<div class="m">站内已收录：<a href="/uisc/'.$p.'.html" target="_blank" rel="noopener">'.'点这里查看 →</a></div>';}if($b&&$f==='pending'){$d.='<form method="post" action="/request" style="margin-top:10px"'.' onsubmit="return confirm(\'确定撤回这条请求吗？\')">'.'<input type="hidden" name="csrf" value="'.self::esc(User::csrf()).'">'.'<input type="hidden" name="do" value="del">'.'<input type="hidden" name="id" value="'.$h.'">'.'<button class="u-btn ghost sm" type="submit">撤回</button>'.'</form>';}$d.='</div>';}return $d.'</div>';}private static function pager($a,$b,$c){$d=max(1,(int)ceil($c/max(1,$b)));if($d<=1){return'';}$e='<div class="u-pager">';$e.=($a>1)?'<a href="/request?p='.($a-1).'">上一页</a>':'<span>上一页</span>';$e.='<span>第 '.$a.' / '.$d.' 页</span>';$e.=($a<$d)?'<a href="/request?p='.($a+1).'">下一页</a>':'<span>下一页</span>';return $e.'</div>';}private static function reqScript(){return <<<HTML
-<script>
-(function(){
-  var el = document.getElementById('rq_title');
-  var box = document.getElementById('rqHint');
-  if(!el || !box){ return; }
-  var timer = null;
-  function hide(){ box.className = 'u-hintbox'; box.innerHTML = ''; }
-  el.addEventListener('input', function(){
-    var v = (el.value || '').trim();
-    if(timer) { clearTimeout(timer); }
-    if(v.length < 2){ hide(); return; }
-    timer = setTimeout(function(){
-      fetch('/request?probe=' + encodeURIComponent(v))
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          if(!d || !d.success || !d.data || !d.data.items || !d.data.items.length){ hide(); return; }
-          var its = d.data.items, s = '站内可能已经有这些，先看看是不是你要的：';
-          for(var i=0;i<its.length;i++){
-            var a = document.createElement('a');
-            a.href = String(its[i].url || '/');
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.textContent = String(its[i].title || '');
-            box.appendChild(document.createTextNode(' '));
-            box.appendChild(a);
-          }
-          box.className = 'u-hintbox on';
-        })
-        .catch(function(){ hide(); });
-    }, 350);
-  });
-})();
-</script>
-HTML;}public static function ucss(){return <<<CSS
-/* ---------- 注册 / 登录 / 资源请求 页面 ---------- */
-.u-wrap{max-width:var(--maxw);margin:0 auto;padding:22px var(--pad) 0}
-.u-narrow{max-width:520px;margin-left:auto;margin-right:auto}
-.u-card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px;margin-bottom:16px;color:var(--txt)}
-.u-head{margin-bottom:16px}
-.u-head h1{font-size:20px;margin:0 0 7px;letter-spacing:.3px}
-.u-head p{color:var(--mut);font-size:13.5px;line-height:1.95;margin:0}
-.u-head a{color:var(--pri);font-weight:600}
-.u-field{margin-bottom:14px}
-.u-field>label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--txt)}
-.u-field .tip{color:var(--mut);font-size:12px;margin-top:6px;line-height:1.7}
-.u-in{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
-.u-in:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(91,91,214,.14)}
-textarea.u-in{min-height:92px;resize:vertical;line-height:1.75;font-family:inherit}
-select.u-in{background-image:none}
-.u-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.u-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 24px;border:0;border-radius:10px;background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;text-decoration:none;line-height:1.4}
-.u-btn:hover{filter:brightness(1.06);box-shadow:var(--shadow-h)}
-.u-btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt);font-weight:500}
-.u-btn.ghost:hover{background:var(--bg);box-shadow:none;filter:none}
-.u-btn.sm{padding:7px 14px;font-size:13px;font-weight:500}
-.u-alt{color:var(--mut);font-size:13px;margin:16px 0 0;text-align:center}
-.u-alt a{color:var(--pri);font-weight:600}
-.u-flash{border-radius:12px;padding:12px 15px;font-size:13.5px;line-height:1.85;margin-bottom:14px;border:1px solid transparent}
-.u-flash.ok{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
-.u-flash.err{background:#fef2f2;color:#991b1b;border-color:#fecaca}
-.u-flash.info{background:#eff6ff;color:#1e40af;border-color:#bfdbfe}
-.u-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.u-pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;color:var(--mut)}
-.u-pill b{color:var(--txt)}
-.u-list{display:flex;flex-direction:column;gap:10px}
-.u-item{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg)}
-.u-item .t{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;word-break:break-word}
-.u-item .m{color:var(--mut);font-size:12.5px;margin-top:7px;line-height:1.85}
-.u-item .m a{color:var(--pri)}
-.u-item .n{font-size:13px;margin-top:8px;line-height:1.85;opacity:.94;word-break:break-word}
-.u-badge{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
-.u-badge.pending{background:#fef3c7;color:#92400e}
-.u-badge.found{background:#dcfce7;color:#166534}
-.u-badge.notfound{background:#f1f5f9;color:#475569}
-.u-badge.replied{background:#dbeafe;color:#1e40af}
-.u-badge.closed{background:#f3f4f6;color:#6b7280}
-.u-reply{margin-top:9px;padding:10px 13px;border-left:3px solid var(--pri);background:var(--card);border-radius:0 9px 9px 0;font-size:13px;line-height:1.85}
-.u-empty{color:var(--mut);font-size:13.5px;padding:26px 8px;text-align:center}
-.u-hintbox{display:none;margin-top:9px;font-size:13px;line-height:2;border-radius:11px;padding:11px 13px;background:var(--bg);border:1px dashed var(--line);color:var(--mut)}
-.u-hintbox.on{display:block}
-.u-hintbox a{color:var(--pri);font-weight:600;margin-right:10px;white-space:nowrap}
-.u-lock{text-align:center;padding:26px 12px}
-.u-lock .ico{font-size:34px;line-height:1}
-.u-lock h3{margin:12px 0 8px;font-size:16px}
-.u-lock p{color:var(--mut);font-size:13.5px;line-height:1.95;margin:0 0 18px}
-.u-cap{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.u-cap .q{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 15px;font-size:15px;font-weight:800;letter-spacing:1.5px;color:var(--pri);white-space:nowrap}
-.u-cap .u-in{flex:1;min-width:130px}
-.u-hp{position:absolute!important;left:-9999px!important;top:auto;width:1px;height:1px;opacity:0;overflow:hidden}
-.u-pager{display:flex;gap:8px;justify-content:center;align-items:center;margin:18px 0 2px;flex-wrap:wrap}
-.u-pager a,.u-pager span{border:1px solid var(--line);border-radius:9px;padding:7px 14px;font-size:13px;background:var(--bg);color:var(--txt)}
-.u-pager span:last-child,.u-pager span:first-child{color:var(--mut)}
-.u-pager a:hover{border-color:var(--pri);color:var(--pri)}
-
-/* 顶部用户区（顶栏里的登录 / 注册 / 我的请求） */
-.uarea{display:flex;align-items:center;gap:8px;white-space:nowrap}
-.uarea .uname{color:#fff;font-size:13px;opacity:.92;max-width:120px;overflow:hidden;text-overflow:ellipsis}
-
-/* ≤900：两栏改单栏 */
-@media (max-width:900px){
-  .u-wrap{padding-top:18px}
-}
-/* ≤560：表单两列改一列，按钮铺满（拇指更好点） */
-@media (max-width:560px){
-  .u-card{padding:17px 15px;border-radius:14px}
-  .u-head h1{font-size:18px}
-  .u-row2{grid-template-columns:1fr;gap:0}
-  .u-btn{width:100%}
-  .u-btn.sm{width:auto}
-  .u-in{font-size:16px}          /* 16px 可阻止 iOS 聚焦时整页放大 */
-  .u-lock{padding:18px 4px}
-}
-@media (max-width:380px){
-  .u-head h1{font-size:17px}
-  .u-pill{padding:5px 10px;font-size:12px}
-}
-/* 触屏：去掉 hover 粘滞（手机上点完不会"卡住浮起"） */
-@media (hover:none){
-  .u-btn:hover{filter:none;box-shadow:none}
-  .u-btn.ghost:hover{background:transparent}
-  .u-pager a:hover{border-color:var(--line);color:var(--txt)}
-}
-@media (prefers-reduced-motion:reduce){
-  .u-btn,.u-in{transition:none}
-}
-/* 打印：去掉顶栏页脚，卡片边框简化 */
-@media print{
-  .topbar,.mainnav,.foot,.u-pager,.u-btn{display:none!important}
-  .u-card{box-shadow:none;border-color:#ddd}
-}
-/* 暗色：简约模板强制暗色 */
-.tpl-simple.mode-dark .u-flash.ok{background:#10321f;color:#6ee7b7;border-color:#1c4a33}
-.tpl-simple.mode-dark .u-flash.err{background:#3a1a1c;color:#fca5a5;border-color:#5a2a2d}
-.tpl-simple.mode-dark .u-flash.info{background:#152238;color:#93c5fd;border-color:#1e3a5f}
-.tpl-simple.mode-dark .u-badge.pending{background:#3a2f12;color:#fbbf24}
-.tpl-simple.mode-dark .u-badge.found{background:#10321f;color:#6ee7b7}
-.tpl-simple.mode-dark .u-badge.notfound{background:#26304a;color:#c3cad8}
-.tpl-simple.mode-dark .u-badge.replied{background:#152238;color:#93c5fd}
-.tpl-simple.mode-dark .u-badge.closed{background:#232b3c;color:#9aa3b8}
-.tpl-simple.mode-dark .u-in{background:#131a29}
-.tpl-simple.mode-dark .u-item,.tpl-simple.mode-dark .u-pill,.tpl-simple.mode-dark .u-pager a,.tpl-simple.mode-dark .u-pager span{background:#1b2233}
-.tpl-simple.mode-dark .u-reply{background:#1b2233}
-/* 暗色：跟随系统（经典与简约模板通用） */
-@media (prefers-color-scheme:dark){
-  body.mode-auto .u-flash.ok{background:#10321f;color:#6ee7b7;border-color:#1c4a33}
-  body.mode-auto .u-flash.err{background:#3a1a1c;color:#fca5a5;border-color:#5a2a2d}
-  body.mode-auto .u-flash.info{background:#152238;color:#93c5fd;border-color:#1e3a5f}
-  body.mode-auto .u-badge.pending{background:#3a2f12;color:#fbbf24}
-  body.mode-auto .u-badge.found{background:#10321f;color:#6ee7b7}
-  body.mode-auto .u-badge.notfound{background:#26304a;color:#c3cad8}
-  body.mode-auto .u-badge.replied{background:#152238;color:#93c5fd}
-  body.mode-auto .u-badge.closed{background:#232b3c;color:#9aa3b8}
-  body.mode-auto .u-in{background:#131a29}
-  body.mode-auto .u-item,body.mode-auto .u-pill,body.mode-auto .u-pager a,body.mode-auto .u-pager span{background:#182034}
-  body.mode-auto .u-reply{background:#182034}
-}
-/* 刘海屏 / 底部横条安全区（放在本文件样式表最后） */
-@supports(padding:max(0px)){
-  .u-wrap{padding-left:max(var(--pad),env(safe-area-inset-left));padding-right:max(var(--pad),env(safe-area-inset-right))}
-}
-CSS;}}
+HTML;$n=str_replace('{CSRF}',self::esc(User::csrf()),$n);$n=str_replace('{TYPES}',self::typeOptions(''),$n);$n=str_replace('{CONTACT}',$p,$n);}$s='';if($d){$s='<div class="u-card"><div class="u-head"><h1 style="font-size:16px">我的请求</h1>'.'<p>共 '.(int)(isset($a['myTotal'])?$a['myTotal']:0).' 条。'.'还没处理的可以自己撤回。</p></div>'.self::reqList(isset($a['myList'])?$a['myList']:array(),true).'</div>';}$t='';if($b['public']&&($d||$b['guest_view'])){$u=self::pager((int)(isset($a['page'])?$a['page']:1),(int)(isset($a['perPage'])?$a['perPage']:20),(int)(isset($a['total'])?$a['total']:0));$t='<div class="u-card"><div class="u-head"><h1 style="font-size:16px">大家都在找</h1>'.'<p>站长按提交顺序处理，已找到的会在这里变成「已找到」。</p></div>'.self::reqList(isset($a['list'])?$a['list']:array(),false).$u.'</div>';}$v=$b['notice']!==''?'<div class="u-flash info">'.User::text($b['notice']).'</div>':'';$w=$g.self::flashHtml().$j.$v.'<div class="u-card">'.$n.'</div>'.$s.$t.self::reqScript();return self::shell($c,$w,true,$e,$f);}private static function reqList(array $a,$b){if(!$a){return'<div class="u-empty">'.($b?'还没有提交过请求。':'还没有人提交请求，你可以是第一个。').'</div>';}$c=User::reqStatusText();$d='<div class="u-list">';foreach($a as $e){$f=(string)(isset($e['status'])?$e['status']:'pending');$g=isset($c[$f])?$c[$f]:'待处理';$h=(int)(isset($e['id'])?$e['id']:0);$i=(string)(isset($e['title'])?$e['title']:'');$j=(string)(isset($e['type'])?$e['type']:'');$k=isset($e['year'])&&$e['year']!==null&&$e['year']!==''?(int)$e['year']:0;$l=(string)(isset($e['created_at'])?$e['created_at']:'');$m=array();if($j!==''){$m[]=self::label($j);}if($k>0){$m[]=$k;}if(!$b&&!empty($e['username'])){$m[]='由 '.User::publicUserLabel($e['username']).' 提交';}if($l!==''){$m[]=substr($l,0,16);}$n=(string)(isset($e['note'])?$e['note']:'');$o=(string)(isset($e['admin_note'])?$e['admin_note']:'');$p=(int)(isset($e['item_id'])?$e['item_id']:0);$d.='<div class="u-item">';$d.='<div class="t">'.self::esc($i).' <span class="u-badge '.User::statusClass($f).'">'.self::esc($g).'</span>'.'</div>';if($m){$d.='<div class="m">'.self::esc(implode(' · ',$m)).'</div>';}if($n!==''){$d.='<div class="n">'.User::text($n).'</div>';}if($b&&$o!==''){$d.='<div class="u-reply"><b>站长回复：</b>'.User::text($o).'</div>';}if($p>0){$d.='<div class="m">站内已收录：<a href="/uisc/'.$p.'.html" target="_blank" rel="noopener">'.'点这里查看 →</a></div>';}if($b&&$f==='pending'){$d.='<form method="post" action="/request" style="margin-top:10px"'.' onsubmit="return confirm(\'确定撤回这条请求吗？\')">'.'<input type="hidden" name="csrf" value="'.self::esc(User::csrf()).'">'.'<input type="hidden" name="do" value="del">'.'<input type="hidden" name="id" value="'.$h.'">'.'<button class="u-btn ghost sm" type="submit">撤回</button>'.'</form>';}$d.='</div>';}return $d.'</div>';}private static function pager($a,$b,$c){$d=max(1,(int)ceil($c/max(1,$b)));if($d<=1){return'';}$e='<div class="u-pager">';$e.=($a>1)?'<a href="/request?p='.($a-1).'">上一页</a>':'<span>上一页</span>';$e.='<span>第 '.$a.' / '.$d.' 页</span>';$e.=($a<$d)?'<a href="/request?p='.($a+1).'">下一页</a>':'<span>下一页</span>';return $e.'</div>';}private static function reqScript(){return \Core\Views::jsTag('request-hint.js');}public static function ucss(){static $a=null;if($a===null){$b=__DIR__.'/../assets/css/user.css';$c=@file_get_contents($b);$a=($c===false||$c==='')?'':$c;}if($a===''){return'/* user.css 未能读取，请检查 assets/css/user.css 是否已随包上传 */';}return $a;}}

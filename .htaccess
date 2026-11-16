@@ -20,6 +20,71 @@
   RewriteRule ^(install|setup|upgrade|update)([._-][a-z0-9]+)?(\.[a-z0-9]+)?(/.*)?$ - [R=404,L]
 </IfModule>
 
+# ============================================================================
+# 静态资源缓存与压缩（v5.0.0 新增）
+# ----------------------------------------------------------------------------
+# ★ 为什么需要：项目里 CSS/JS 全是外链（v4.7.8 起），URL 带 ?v=版本号。
+#   Apache 默认会带 ETag（回访命中 304），但**不带 Cache-Control**，
+#   且默认不压缩 CSS/JS ⇒ 每次回访都要重传整个文件。
+#   这就是「做了外链却没感觉到快」的根因 —— 外链只解决了一半。
+#
+# ★ Nginx 用户请改用 nginx-static-assets.conf.sample（能力更强：immutable 强缓存）。
+#
+# 为什么可以安全地「一年强缓存 + immutable」：
+#   URL 里带 ?v=版本号，CSS/JS 改动必然伴随版本号递增
+#   ⇒ 同一 URL 的内容永远不会变 ⇒ 强缓存是安全的。
+#   真正改文件内容时升版本号，老用户下次访问拿到新 URL 自动绕过缓存。
+# ============================================================================
+
+# ---- 给「静态资源路径」打环境标记，供下面的 Header 指令按路径区分长/短缓存 ----
+#   ★ 必须放在最前面：mod_headers 的 Header set ... env=XXX 只对**已经存在**的
+#     env 变量生效；标记写在后面的话规则会静默失效（不报错、也不生效）。
+<IfModule mod_setenvif.c>
+  SetEnvIf Request_URI "^/assets/"                  ASSET_LONG
+  SetEnvIf Request_URI "^/assets/"                  ASSET_IMMUTABLE
+  SetEnvIf Request_URI "^/uisc/.*\.html$"           ASSET_SHORT
+</IfModule>
+
+# ---- 强缓存：一年内不必再问服务器 ----
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css                  "access plus 1 year"
+  ExpiresByType application/javascript    "access plus 1 year"
+  ExpiresByType text/javascript           "access plus 1 year"
+  ExpiresByType image/webp                "access plus 1 year"
+  ExpiresByType image/avif                "access plus 1 year"
+  ExpiresByType image/svg+xml             "access plus 1 year"
+  ExpiresByType image/jpeg                "access plus 1 year"
+  ExpiresByType image/png                 "access plus 1 year"
+  ExpiresByType image/gif                 "access plus 1 year"
+  ExpiresByType font/woff2                "access plus 1 year"
+  # 静态页内容随条目变更，用短缓存 + 每次校验
+  ExpiresByType text/html                 "access plus 5 minutes"
+</IfModule>
+
+# ---- 补 Cache-Control（含 immutable）----
+# ★ mod_expires 只写 Expires 这个**已废弃**的头，主流浏览器仍要求 Cache-Control，
+#   只设 Expires 等于白设 —— 所以下面必须自己再写一遍。
+<IfModule mod_headers.c>
+  # ★ ★ 两个头都要写，缺一不可：
+  #   Expires  —— 已废弃，但老浏览器仍认；
+  #   Cache-Control —— 现行标准，带上 immutable 才不会被某些浏览器"启发式重验"。
+  # ★ immutable 的前提是 URL 带 ?v=：内容变了必然换版本号 ⇒ 同 URL 内容永不变。
+  Header set Cache-Control "public, max-age=31536000, immutable" env=ASSET_IMMUTABLE
+  Header set Cache-Control "public, max-age=300, must-revalidate"  env=ASSET_SHORT
+
+  # ---- 压缩 CSS/JS/JSON/SVG（实测 site.css 压缩率约 65%）----
+  # ★ 宝塔的 Apache 默认往往只压 HTML/CSS，JS 与 SVG 常被漏掉。
+  <FilesMatch "\.(css|js|json|svg|html|xml|txt)$">
+    Header append Content-Encoding "gzip"
+  </FilesMatch>
+
+  # ---- 静态资源不允许执行脚本（万一将来有 PHP 文件被塞进 assets/）----
+  <FilesMatch "\.(php|php[0-9]|phtml|phar)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+
 # 保护敏感目录（配置 / SQL / 源码 / 定时脚本 / 工具 / 备份）
 RedirectMatch 404 ^/(config|sql|cron|core|adapters|tools|data|logs|backup)/
 

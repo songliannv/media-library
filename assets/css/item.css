@@ -1,0 +1,309 @@
+/* v4.9.9 从 site.css 抽出：详情页（详情页静态页，路径形如 /uisc 加数字加 .html）专属样式。
+   为什么要拆：这些规则（hero / 下载地址 / 演职人员 / 信息块…）只有详情页用，
+   首页、列表页、标签页、人物页一条都用不到，却跟着 site.css 一起下载。
+   拆出后由详情页单独 <link>，列表页少传这部分。
+
+   ★ 这里的 @media 条件是从 site.css 原样搬过来的，不是重新组织的 ——
+     内页的响应式规则（.hero h1{flex:0 0 100%} 等）与首页规则混在同一个 @media 块里；
+     只搬顶层规则会让窄屏 hero 布局塌掉
+     （v4.8.2 已踩过：390px 下 h1 只剩 81px，标题竖排成一行一个字）。
+
+   ★ 判定「是否内页专属」用选择器前缀白名单（.hero/.detail/.backbar/.poster/
+     .topline/.cast/.kv/.dl/.block/.tags/.info），
+     与 Views::renderItemPage 及其辅助函数实际输出的 class 一一对应。 */
+/* ===== 内页 ===== */
+/* 内页 hero 与详情 */
+/* Hero 区：暗色渐变 */
+.hero{position:relative;min-height:360px;display:flex;align-items:flex-end;color:#fff;overflow:hidden}
+.hero .bg{position:absolute;inset:0;background:linear-gradient(135deg,#3a2a5e,#6b3f8f);background-size:cover;background-position:center;transform:scale(1.05)}
+.hero .mask{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,17,26,.20),rgba(15,17,26,.90))}
+.hero .in{position:relative;max-width:var(--maxw);margin:0 auto;padding:34px 18px;display:flex;gap:26px;width:100%}
+.hero .poster{width:184px;flex:0 0 184px;aspect-ratio:2/3;border-radius:16px;overflow:hidden;background:#222;box-shadow:0 16px 38px rgba(0,0,0,.5);position:relative}
+.hero .poster img{width:100%;height:100%;object-fit:cover;display:block}
+.hero .poster .np{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:13px}
+.hero .info{flex:1;min-width:0;padding-bottom:4px}
+/* ★ v4.3.15：按用户图示重排 —— 标题与类型标签、指标胶囊同一横排（标题左，标签/指标依次向右，
+   窄屏自动换行）；简介文字直接填进 hero 头部，不再单独成卡。
+   ★ v4.4.0：按用户二次反馈 —— 类型标签与指标整体「移到最右面」（margin-left:auto 贴右对齐）。 */
+.hero .topline{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+/* ★ v4.8.2：窄屏下标题必须【独占一整行】。
+     `.hero .topline` 是 flex-wrap:wrap 的多行布局（h1 / tags / stats 各占一行），
+     而 h1 没有 flex-basis ⇒ 它的宽度由同一行里 tags/stats 的实际占位「挤」出来。
+     实测 390px 下 h1 的 clientWidth 只剩 **81px**（约一个汉字宽）⇒
+     标题被竖排成一行一个字，看起来像「被拦腰截断」（用户截图）。
+     修：窄屏给 h1 `flex:0 0 100%`，强制独占整行，标签与指标自动落到下面两行。 */
+.hero h1{margin:0;font-size:28px;line-height:1.25;letter-spacing:.3px}
+/* ★ v4.8.2：下载地址 / 说明文字等长文本必须能在任意位置断行。
+   `.dl-raw` 已有 `word-break:break-all`，但**英文 / 数字之间的连续串**（如长 token）
+   在部分浏览器仍可能撑宽容器；`overflow-wrap:anywhere` 是更彻底的一层保险。
+   同理给 `.hero .ot`（原文标题）与 `.kv .v`（扩展字段值）补上。 */
+.hero .ot{opacity:.82;font-size:14px;margin-bottom:10px}
+/* ★ v4.8.0 标签样式统一：分类标签（.tags .t）与指标胶囊（.stats .s）此前是两套规格 ——
+   padding 4px 12px / radius 20px vs 8px 15px / radius 11px，同一行里高矮胖瘦不齐，很刺眼。
+   现在两者共用同一组「胶囊」规格（同padding / 同圆角 / 同底色 / 同字号），
+   只保留指标里数值 `<b>` 的字号与配色差异 —— 视觉统一且信息层级仍在。 */
+/* ★ v4.8.2 移动端同样统一 —— 两组共用一套缩小版胶囊规格（高度也锁定）。
+     ★ v4.9.4：靠右对齐改由 .hero-right 承担（见上方 .hero .hero-right{margin-left:auto}），
+       窄屏一律取消 —— 那个「靠右」在窄屏会把整组推出右边界
+       （实测 390px 下标签被裁掉两三个，v4.8.2 踩过）。窄屏左对齐自然换行。 */
+.hero .tags,.hero .stats{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* ★ v4.9.4 修正（v4.9.2 起）：靠右对齐由 .hero-right 承担 ——
+   标题在左，分类标签（犯罪/剧情/悬疑）+ 指标整组贴右。
+   ★★ v4.9.3 的坑：只让 .tags 带 margin-left:auto，而**分类为空的条目整块 .tags
+      不输出** ⇒ .stats 失去 auto、被贴回标题右边（用户截图：指标跑到中间）。
+      现在两组包进 .hero-right，auto 由容器承担 ⇒ 与有没有分类标签无关。
+      .tags / .stats 都**不得**再带 margin-left:auto（flex 里两个 auto 会平分
+      剩余空间，把标签组推到中间、指标推到最右，视觉上被拆开）。 */
+.hero .hero-right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0}
+.hero .tags .t,.hero .stats .s{background:rgba(255,255,255,.14);padding:6px 14px;border-radius:999px;font-size:13px;line-height:19.5px;height:32px;display:inline-flex;align-items:center;white-space:nowrap}
+/* 分类标签是可点链接，指标不可点 —— 只给链接加 hover 反馈，避免"看起来能点其实不能"的误导 */
+.hero .tags .t{transition:background .15s,color .15s}
+.hero .tags .t:hover{background:rgba(255,255,255,.28)}
+/* ★ 统一高度的关键：`<b>` 是 15px 字号，继承 1.5 倍行高会算出22.5px，
+   把胶囊从 32px 撑到 35px —— 实测「分类标签 32px vs 指标 35px」的元凶就是它。
+   显式给 `line-height:1` + 固定 `height` 让两组严格等高。 */
+.hero .stats .s b{font-size:15px;line-height:1;margin-left:3px;font-weight:700}
+.hero .stats .s.gold b{color:#ffcf6b}
+.hero .stats .s.clk b{color:#7ef0c0}
+.hero .stats .s.hot b{color:#ffb36b}
+.detail{max-width:var(--maxw);margin:24px auto;padding:0 18px;display:grid;grid-template-columns:1fr;gap:22px}
+/* ★ v4.8.1 修复「演职员太多时页面横向溢出」：
+   grid 项默认 `min-width:auto`，即**拒绝收缩到内容宽度以下**。
+   演职员多时 `.cast`（横向 flex + overflow-x:auto）的内容宽有好几千 px，
+   `.block` 作为 `.detail` 的 grid 子项被它反向撑到 3000+ px ⇒
+   `overflow-x:auto` 因为元素本身就这么宽而形同虚设（无处可滚），
+   整页于是横向溢出、最后几张卡被裁在屏幕外（用户截图）。
+   修法：给 grid 子项 `min-width:0`（+ `min-height:0` 防同类纵向问题），
+   让 `.block` 能收缩到容器宽度，`.cast` 的横向滚动才真正生效。 */
+.detail>*{min-width:0;min-height:0}
+/* 详情块：玻璃拟态 */
+.block{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:var(--shadow);min-width:0}
+.block h2{margin:0 0 14px;font-size:17px;display:flex;align-items:center;gap:9px}
+.block h2:before{content:"";width:4px;height:17px;background:linear-gradient(180deg,var(--pri),var(--pri2));border-radius:3px;display:inline-block}
+.dl{list-style:none;padding:0;margin:0;display:flex;flex-direction:row;flex-wrap:wrap;gap:10px 12px;align-items:center;justify-content:flex-start}
+/* 下载地址：标签与地址改为竖排，长网址不再被挤成两三个字一行 */
+/* 下载链接：玻璃拟态 + 悬停光晕 */
+.dl li{background:transparent;border:0;border-radius:0;padding:0;margin:0;word-break:normal;display:inline-flex;align-items:center;gap:0;transition:none}
+.dl li:hover{border-color:transparent;background:transparent;box-shadow:none}
+.dl li a{color:inherit;font-size:inherit;word-break:normal;text-decoration:none}
+.dl-tag{flex:0 0 auto;background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;font-size:12.5px;font-weight:600;padding:4px 12px;border-radius:20px;white-space:nowrap}
+/* v4.2.6：把胶囊样式直接给 <a>（dl-btn），取代 .dl-tag + <a> 两个"光鸭"的冗余结构；
+   同时 .dl-cell 去掉 li 卡片玻璃底，让胶囊按钮横向成排排列 */
+.dl-cell{display:inline-flex;align-items:center;justify-content:center;background:transparent;border:0;padding:0;margin:0 4px 8px 0}
+.dl-cell:hover{background:transparent;border-color:transparent;box-shadow:none;transform:none}
+.dl-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff !important;font-size:21px;font-weight:600;padding:13px 30px;border-radius:28px;white-space:nowrap;text-decoration:none;transition:transform .15s,box-shadow .2s}
+.dl-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(124,92,255,.35)}
+/* 「转存中」占位（v5.0.4~v5.0.6 的形态）—— 新模板已不再输出 <span class="dl-btn dl-pending">，
+   此段仅供**尚未重生静态页**的老页面继续正确显示（灰化 + 禁用光标），别删。 */
+.dl-btn.dl-pending{opacity:.5;cursor:not-allowed;filter:grayscale(.3)}
+.dl-btn.dl-pending:hover{transform:none;box-shadow:none}
+.dl-btn.dl-pending em{font-style:normal;font-size:15px;font-weight:600;line-height:1;padding:4px 9px;border-radius:12px;background:rgba(255,255,255,.28)}
+/* ★ v5.0.8：未转存按钮与普通直链按钮**完全同款**（.dl-btn，无任何额外修饰）——
+   站长要求访客看不出差别，label 统一「某某网盘」，转存成功后地址也是网盘地址。
+   等待期由全屏遮罩 .dl-mask 承担说明，按钮自身只加一个 .dl-busy 脉冲（防连点）。 */
+.dl-btn.dl-busy{pointer-events:none;opacity:.82;animation:dl-busy 1.15s ease-in-out infinite}
+@keyframes dl-busy{0%,100%{opacity:.82}50%{opacity:.6}}
+/* 转存遮罩：JS 走 AJAX 时弹这一层（无 JS 时不出现，走服务端同步转存） */
+.dl-mask{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(15,18,28,.55);backdrop-filter:blur(2px)}
+.dl-mask .box{background:var(--card);color:var(--txt);border-radius:16px;padding:26px 34px;text-align:center;min-width:290px;box-shadow:0 18px 48px rgba(0,0,0,.35)}
+.dl-mask .spin{width:34px;height:34px;margin:0 auto 14px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--pri);animation:dl-spin .8s linear infinite}
+@keyframes dl-spin{to{transform:rotate(360deg)}}
+.dl-mask .t{font-size:19px;font-weight:600;line-height:1.5}
+.dl-mask .s{font-size:14px;color:var(--mut);margin-top:8px;line-height:1.6}
+.dl-mask.err .spin{display:none}
+.dl-mask.err .t{color:#e5534b}
+.dl-raw{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;color:#3a3f4d;white-space:pre-wrap;word-break:break-all;overflow-wrap:anywhere}
+/* ★ v4.8.2：下载地址 / 说明文字等长文本必须能在任意位置断行。
+   `.dl-raw` 已有 `word-break:break-all`，但**英文 / 数字之间的连续串**（如长 token）
+   在部分浏览器仍可能撑宽容器；`overflow-wrap:anywhere` 是更彻底的一层保险。
+   同理给 `.hero .ot`（原文标题）与 `.kv .v`（扩展字段值）补上。 */
+.hero .ot{overflow-wrap:anywhere}
+.kv .v{overflow-wrap:anywhere}
+.block .hint{color:var(--mut);font-size:18px;margin-top:10px}
+/* v3.4.6：auto-fit 让空轨道自动塌缩 → 2 项各 50% / 3 项各 33% / 4+ 项按每行 3 列铺 */
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 22px}
+/* ★ v4.4.7：信息块正文 1.5 倍（标签/值/胶囊）
+   ★ v4.4.9：3 列网格 —— 导演 1/3、演员 2/3（kv-w2），单字段块占满（kv-w3）；窄屏塌成单列 */
+.kv-w2{grid-column:span 2}
+.kv-w3{grid-column:span 3}
+/* ★ v4.4.7：手机端正文同步 1.5 倍（略低于桌面端，防长词溢出） */
+.kv .k{color:var(--mut);font-size:18px;margin-bottom:4px;letter-spacing:.2px}
+.kv .v{font-size:21.5px;line-height:1.7;word-break:break-word}
+/* ★ v3.7.2：导演/演员可点击人名胶囊（详情页信息块） */
+.kv .info-pill{display:inline-flex;align-items:center;padding:5px 14px;margin:3px 6px 3px 0;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--txt);font-size:19px;text-decoration:none;transition:.15s;white-space:nowrap}
+.kv .info-pill:hover{border-color:var(--pri);color:var(--pri);background:var(--card);box-shadow:0 3px 10px rgba(27,31,42,.08)}
+.cast{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px}
+.cast .p{flex:0 0 110px;text-align:center}
+.cast .p img{width:110px;height:150px;object-fit:cover;border-radius:11px;background:#eee}
+.cast .p .nm{font-size:13px;margin-top:6px;font-weight:600}
+.cast .p .ch{font-size:12px;color:var(--mut)}
+.cast .p .p-np{width:110px;height:150px;background:#eee;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:12px}
+/* v3.4.4：主要演职人员可左右拖动 + 箭头按钮；箭头默认隐藏，内容溢出后自动显示 */
+.cast-wrap{position:relative;display:flex;align-items:flex-start;gap:4px}
+/* ★ v4.8.1：`.cast-wrap` 是 flex 容器，`.cast` 作为 flex 子项同样默认 min-width:auto
+   ⇒ 内容多时它不肯收缩，横向滚动同样失效。必须显式给 0。 */
+.cast-wrap .cast{flex:1 1 auto;min-width:0;cursor:grab;scroll-behavior:smooth}
+.cast-wrap .cast.dragging{cursor:grabbing;scroll-behavior:auto}
+.cast-nav{flex:0 0 auto;width:32px;height:170px;border:1px solid var(--line);background:var(--card);color:var(--pri);border-radius:10px;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:20px;line-height:1;transition:.15s;padding:0}
+.cast-nav.show{display:flex}
+.cast-nav:hover{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border-color:var(--pri);box-shadow:0 6px 14px rgba(91,91,214,.22)}
+.cast-nav:disabled{opacity:.3;cursor:not-allowed;background:var(--card);color:var(--mut);border-color:var(--line);box-shadow:none}
+.cast-nav .a{pointer-events:none}
+.backbar{max-width:var(--maxw);margin:10px auto 0;padding:0 18px}
+.backbar a{display:inline-block;padding:10px 20px;background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;border-radius:10px;font-size:14px;box-shadow:0 8px 20px rgba(91,91,214,.3)}
+.cast{-webkit-overflow-scrolling:touch}
+.cast::-webkit-scrollbar{height:0;width:0}
+.hero a:focus-visible{outline-color:#fff}
+/* ===== 内页 ===== */
+/* 内页 hero 与详情 */
+/* Hero 区：暗色渐变 */
+.hero{
+  background:linear-gradient(135deg,#0f1424,#1a0f2e);
+  border-top:1px solid var(--glass-bd);
+}
+.hero .bg{
+  background:linear-gradient(135deg,rgba(15,20,36,.5),rgba(26,15,46,.5)),linear-gradient(135deg,#3a2a5e,#6b3f8f);
+}
+.hero .poster{
+  border:1px solid var(--glass-bd);
+  box-shadow:0 20px 48px rgba(0,0,0,.60),0 0 0 1px rgba(255,255,255,.05);
+}
+/* 详情块：玻璃拟态 */
+.block{
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--glass-bd);
+  box-shadow:var(--shadow);
+}
+.block h2:before{
+  background:linear-gradient(180deg,var(--pri),var(--pri2));
+  box-shadow:0 0 12px rgba(124,92,255,.50);
+}
+/* 下载地址：标签与地址改为竖排，长网址不再被挤成两三个字一行 */
+/* 下载链接：玻璃拟态 + 悬停光晕 */
+.dl li{
+  background:var(--glass);
+  border:1px solid var(--glass-bd);
+  transition:transform .15s,background .2s,border-color .2s,box-shadow .2s;
+}
+.dl li:hover{
+  background:rgba(124,92,255,.10);
+  border-color:var(--pri);
+  box-shadow:0 8px 24px rgba(124,92,255,.20);
+  transform:translateY(-1px);
+}
+@media (max-width:680px){
+.cast-nav{height:150px;width:28px;font-size:17px}
+/* ★ v4.8.1：`.cast-wrap` 是 flex 容器，`.cast` 作为 flex 子项同样默认 min-width:auto
+   ⇒ 内容多时它不肯收缩，横向滚动同样失效。必须显式给 0。 */
+.cast-wrap .cast{padding-bottom:4px}
+.hero .in{flex-direction:column}
+.hero .poster{width:140px;flex:0 0 140px}
+/* ★ v4.8.2：窄屏下标题必须【独占一整行】。
+     `.hero .topline` 是 flex-wrap:wrap 的多行布局（h1 / tags / stats 各占一行），
+     而 h1 没有 flex-basis ⇒ 它的宽度由同一行里 tags/stats 的实际占位「挤」出来。
+     实测 390px 下 h1 的 clientWidth 只剩 **81px**（约一个汉字宽）⇒
+     标题被竖排成一行一个字，看起来像「被拦腰截断」（用户截图）。
+     修：窄屏给 h1 `flex:0 0 100%`，强制独占整行，标签与指标自动落到下面两行。 */
+.hero h1{font-size:22px}
+}
+@media (max-width:1024px){
+.hero .in{padding-top:26px;padding-bottom:26px;gap:20px}
+}
+@media (max-width:768px){
+.detail{gap:18px}
+/* 详情块：玻璃拟态 */
+.block{padding:18px 17px}
+}
+@media (max-width:560px){
+/* ===== 内页 ===== */
+/* 内页 hero 与详情 */
+/* Hero 区：暗色渐变 */
+.hero{min-height:300px}
+.hero .in{padding-top:22px;padding-bottom:22px;gap:16px}
+.hero .poster{width:124px;flex:0 0 124px;border-radius:13px}
+/* ★ v4.8.2：窄屏下标题必须【独占一整行】。
+     `.hero .topline` 是 flex-wrap:wrap 的多行布局（h1 / tags / stats 各占一行），
+     而 h1 没有 flex-basis ⇒ 它的宽度由同一行里 tags/stats 的实际占位「挤」出来。
+     实测 390px 下 h1 的 clientWidth 只剩 **81px**（约一个汉字宽）⇒
+     标题被竖排成一行一个字，看起来像「被拦腰截断」（用户截图）。
+     修：窄屏给 h1 `flex:0 0 100%`，强制独占整行，标签与指标自动落到下面两行。 */
+.hero h1{font-size:20px;flex:0 0 100%;min-width:0}
+/* ★ v4.8.2：下载地址 / 说明文字等长文本必须能在任意位置断行。
+   `.dl-raw` 已有 `word-break:break-all`，但**英文 / 数字之间的连续串**（如长 token）
+   在部分浏览器仍可能撑宽容器；`overflow-wrap:anywhere` 是更彻底的一层保险。
+   同理给 `.hero .ot`（原文标题）与 `.kv .v`（扩展字段值）补上。 */
+.hero .ot{font-size:13px}
+/* ★ v4.8.0 标签样式统一：分类标签（.tags .t）与指标胶囊（.stats .s）此前是两套规格 ——
+   padding 4px 12px / radius 20px vs 8px 15px / radius 11px，同一行里高矮胖瘦不齐，很刺眼。
+   现在两者共用同一组「胶囊」规格（同padding / 同圆角 / 同底色 / 同字号），
+   只保留指标里数值 `<b>` 的字号与配色差异 —— 视觉统一且信息层级仍在。 */
+/* ★ v4.8.2 移动端同样统一 —— 两组共用一套缩小版胶囊规格（高度也锁定）。
+     ★ v4.9.4：靠右对齐改由 .hero-right 承担（见上方 .hero .hero-right{margin-left:auto}），
+       窄屏一律取消 —— 那个「靠右」在窄屏会把整组推出右边界
+       （实测 390px 下标签被裁掉两三个，v4.8.2 踩过）。窄屏左对齐自然换行。 */
+.hero .tags,.hero .stats{gap:6px}
+/* ★ v4.9.4 修正（v4.9.2 起）：靠右对齐由 .hero-right 承担 ——
+   标题在左，分类标签（犯罪/剧情/悬疑）+ 指标整组贴右。
+   ★★ v4.9.3 的坑：只让 .tags 带 margin-left:auto，而**分类为空的条目整块 .tags
+      不输出** ⇒ .stats 失去 auto、被贴回标题右边（用户截图：指标跑到中间）。
+      现在两组包进 .hero-right，auto 由容器承担 ⇒ 与有没有分类标签无关。
+      .tags / .stats 都**不得**再带 margin-left:auto（flex 里两个 auto 会平分
+      剩余空间，把标签组推到中间、指标推到最右，视觉上被拆开）。 */
+.hero .hero-right{margin-left:0}
+.hero .tags .t,.hero .stats .s{font-size:12.5px;padding:5px 11px;height:29px;line-height:19px}
+/* ★ 统一高度的关键：`<b>` 是 15px 字号，继承 1.5 倍行高会算出22.5px，
+   把胶囊从 32px 撑到 35px —— 实测「分类标签 32px vs 指标 35px」的元凶就是它。
+   显式给 `line-height:1` + 固定 `height` 让两组严格等高。 */
+.hero .stats .s b{font-size:15px}
+/* 详情块：玻璃拟态 */
+.block{padding:16px 15px;border-radius:13px}
+.block h2{font-size:16px}
+.detail{margin-top:18px;gap:16px}
+/* v3.4.6：auto-fit 让空轨道自动塌缩 → 2 项各 50% / 3 项各 33% / 4+ 项按每行 3 列铺 */
+.kv{grid-template-columns:1fr;gap:9px 0}
+.kv-w2,.kv-w3{grid-column:auto}
+.cast{gap:11px}
+.cast .p{flex:0 0 96px}
+.cast .p img,.cast .p .p-np{width:96px;height:132px}
+/* 下载地址：标签与地址改为竖排，长网址不再被挤成两三个字一行 */
+/* 下载链接：玻璃拟态 + 悬停光晕 */
+.dl li{flex-direction:column;align-items:flex-start;gap:7px;padding:12px 13px}
+.dl li a{font-size:18px}
+.dl-raw{font-size:17px}
+/* ★ v4.4.7：手机端正文同步 1.5 倍（略低于桌面端，防长词溢出） */
+.kv .k{font-size:16px}
+.kv .v{font-size:19.5px}
+/* ★ v3.7.2：导演/演员可点击人名胶囊（详情页信息块） */
+.kv .info-pill{font-size:17px}
+.backbar a{display:block;text-align:center;padding:11px 18px}
+}
+@media (max-width:380px){
+.hero .poster{width:104px;flex:0 0 104px}
+/* ★ v4.8.2：窄屏下标题必须【独占一整行】。
+     `.hero .topline` 是 flex-wrap:wrap 的多行布局（h1 / tags / stats 各占一行），
+     而 h1 没有 flex-basis ⇒ 它的宽度由同一行里 tags/stats 的实际占位「挤」出来。
+     实测 390px 下 h1 的 clientWidth 只剩 **81px**（约一个汉字宽）⇒
+     标题被竖排成一行一个字，看起来像「被拦腰截断」（用户截图）。
+     修：窄屏给 h1 `flex:0 0 100%`，强制独占整行，标签与指标自动落到下面两行。 */
+.hero h1{font-size:18px}
+}
+@media (max-height:520px) and (orientation:landscape){
+/* ===== 内页 ===== */
+/* 内页 hero 与详情 */
+/* Hero 区：暗色渐变 */
+.hero{min-height:auto}
+.hero .in{padding-top:16px;padding-bottom:16px}
+}
+@media (hover:none){
+.dl li:hover{background:var(--bg);border-color:var(--line)}
+}
+@media (padding:max(0px)){
+.hero .in,.detail,.backbar{
+    padding-left:max(var(--pad),env(safe-area-inset-left));
+    padding-right:max(var(--pad),env(safe-area-inset-right));
+  }
+}
+@media (prefers-reduced-motion:reduce){
+.dl li:hover{transform:none}
+}

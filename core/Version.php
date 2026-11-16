@@ -1,2 +1,2 @@
 <?php
-require_once __DIR__.'/Guard.php';ml_guard_shield(__FILE__);if(!defined('ML_APP_VERSION')){define('ML_APP_VERSION','4.5.6');}if(!function_exists('ml_version')){function ml_version(){return defined('ML_APP_VERSION')?(string)ML_APP_VERSION:'unknown';}}
+require_once __DIR__.'/Guard.php';ml_guard_shield(__FILE__);if(!defined('ML_APP_VERSION')){define('ML_APP_VERSION','5.4.5');}if(!function_exists('ml_version')){function ml_version(){return defined('ML_APP_VERSION')?(string)ML_APP_VERSION:'unknown';}}
