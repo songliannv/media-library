@@ -1,0 +1,17 @@
+/* v4.9.8 从 site.css 拆出：仅在「打印/另存为 PDF」时才生效。
+   之所以拆出来：这段 0.7 KB 只有 Ctrl+P 场景用得到，
+   而 site.css 每个页面都要下 —— 拆出后由 <link media="print"> 单独加载，
+   屏幕浏览时浏览器不会下载它（media 不匹配即不下载、零字节传输）。 */
+  .topbar,.mainnav,.banner,.toolbar,.pager,.backbar,.foot,.latest{display:none!important}
+  body{background:#fff;color:#000}
+  .wrap,.detail{max-width:none;margin:0;padding:0}
+  .grid{grid-template-columns:repeat(3,1fr);gap:10px}
+  .card,.block{box-shadow:none;border-color:#d8dbe2;break-inside:avoid;page-break-inside:avoid}
+  .hero{min-height:auto;color:#000}
+  .hero .bg,.hero .mask{display:none}
+  .hero h1,.hero .ot{color:#000}
+  .hero .tags .t,.hero .stats .s{background:#f1f3f7;color:#111}
+  .hero .stats .s b,.hero .stats .s.gold b,.hero .stats .s.clk b,.hero .stats .s.hot b{color:#111}
+  .block h2:before{background:#666}
+  .dl li{background:#fafafa}
+  a{text-decoration:underline}

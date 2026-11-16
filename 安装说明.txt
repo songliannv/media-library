@@ -1,0 +1,243 @@
+媒资资料库 · v5.4.5 安装与升级说明
+
+【v4.5.1 升级提示（2026-10-02）】
+- 全量覆盖后保留 config/config.php、config/install.lock、uisc/（已生成静态页）。
+- 覆盖后：重启 PHP → 后台「生成静态页」（首次较慢，会自动到百度百科补演员头像）→ 前台强刷。
+- 图片代理已改名 pic.php；如装了 WAF 请放行该文件。旧地址 img.php 由兼容壳转发。
+- 网盘转存：后台「站点设置 → 添加网盘」扫码登录各网盘账号（★ v5.1.0 起页面只显示 **夸克/UC/光鸭/百度/阿里/迅雷** 6 家；115/123/天翼/移动 的配置入口已隐藏，但老站点已填的账号照常生效）；转存目录可点「📁 浏览网盘目录」在网盘里逐层挑（留空=根目录）。★ v5.0.7 起**不需要挂转存计划任务** —— 访客点详情页「点我去转存」按钮即现场转存并跳转（`cron/pan_transfer.php` 保留为可选的手动批量补转存）。
+- ★ 覆盖本版后请**重生一次静态页**（后台「重新生成静态页」或 `php 站点目录/cron/build_static.php`）：改了详情页按钮与埋点脚本，不重生的话老页面看不到新按钮、访问统计也会一直是 0。
+更新时间：2026-11-16
+运行基线：PHP 8.2+（安装器硬校验 version_compare(PHP_VERSION,'8.2.0','>=')）
+          数据库 MySQL 5.7+ 或 MariaDB 10.4+，需 utf8mb4、InnoDB，账号需 CREATE / ALTER 权限
+          Nginx 1.20+
+
+零、宝塔准备（全新机器先做这一节）
+
+1. 装面板。非 root 账号必须用 sudo：
+
+   curl -sSO https://download.bt.cn/install/installStable_12.sh;sudo bash installStable_12.sh
+
+   结束后打印「外网面板地址 / username / password」，立刻保存。
+   收尾卡住或忘记地址时，另开一个 SSH 窗口执行：
+
+   sudo /etc/init.d/bt default
+
+2. 端口放行，两层都要加：
+
+   阿里云控制台 → 安全组 → 入方向：22、80、443、面板端口
+   宝塔面板 → 安全 → 防火墙：80、443、面板端口
+
+   浏览器打不开面板，九成是安全组没放行面板端口。
+
+3. 内存 2GB 及以下的机器，装数据库前先加交换分区，否则数据库编译安装会被系统 OOM 杀掉：
+
+   sudo fallocate -l 2G /swapfile
+   sudo chmod 600 /swapfile
+   sudo mkswap /swapfile
+   sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+4. 软件商店一键装 LNMP：Nginx 最新稳定版、MariaDB 10.4.x（务必选「极速安装」）、PHP 8.2。
+
+5. 域名解析的 A 记录必须指向当前这台机器。换机器后要改解析并等 DNS 生效。
+
+一、全新安装
+
+1. 宝塔新建数据库，记录库名、用户名、密码。数据库账号需要 CREATE、ALTER 权限。
+2. 上传发布包并解压到站点根目录。解压后根目录应直接看到 index.php、install.php、admin、
+   core、api、adapters；不要再多套一层项目目录。
+3. 关键一步，修正文件属主：
+
+   sudo chown -R www:www /www/wwwroot/你的站点目录
+
+   宝塔上传/解压出来的文件属主是 root，PHP 进程（www）写不了 config/，
+   安装会卡在「config/ 目录不可写」。
+4. PHP 版本选 8.2 或更高，并启用 pdo_mysql、curl、json（必装）；建议启用 mbstring、openssl。
+5. 配好 Nginx 伪静态（见第二节）。
+6. 打开安装页，先用 http（SSL 未部署时 https 会直接连接失败）：
+
+   http://你的域名/install.php
+
+7. 按向导填写数据库信息、管理员账号、管理员密码、站点名称和网址。
+   数据源默认使用 TMDB 与红果短剧；TMDB 需要 API Key，红果短剧免 Key。
+8. 安装器会创建 12 张表：
+
+   media_items / person_index / sync_log / link_checks / pan_transfers /
+   app_settings / app_users / app_requests / app_api_tokens / app_api_logs /
+   page_views / page_views_daily
+
+   其中 page_views / page_views_daily 是「自建访问统计」（v4.9.7 起）：
+   记录页面浏览的明细与按天聚合，替代第三方统计代码。
+   ★ 它们由运行时的 ensureVisitTables() 幂等自愈 —— 即使上面没建出来，
+     打开一次后台也会自动补建；数据库账号需要 CREATE 权限。
+
+9. 安装器会生成 4 个文件：
+
+   config/config.php        数据库连接与运行配置
+   config/pan_types.php     网盘类型（可自行增删）
+   config/install.lock      安装锁
+   config/install-info.txt  安装备忘（含管理员账号，务必删除）
+
+10. 安装完成后再次访问 install.php 返回 404，这是自动锁定，属正常现象。
+11. 安装完成后删除 config/install-info.txt。
+
+网页安装和命令行安装共用 core/Installer.php。命令行方式（建议用宝塔的 PHP CLI）：
+
+   sudo php /www/wwwroot/你的站点/tools/install-cli.php
+
+全新安装不需要先执行历史升级 SQL，也不依赖历史版本的迁移文件。
+
+二、Nginx 伪静态
+
+必须保留动态入口：
+
+   location / {
+       try_files $uri $uri/ /index.php?$query_string;
+   }
+
+必须保护内部目录：
+
+   location ^~ /config/   { return 404; }
+   location ^~ /sql/      { return 404; }
+   location ^~ /core/     { return 404; }
+   location ^~ /cron/     { return 404; }
+   location ^~ /adapters/ { return 404; }
+   location ^~ /tools/    { return 404; }
+
+安装路径只拦截 setup、upgrade、update，不要在 Nginx 层拦截 install.php：
+
+   location ~* ^/(setup|upgrade|update) { return 404; }
+
+未安装时 /install.php 必须能打开；安装完成后由安装锁和程序守卫返回 404。
+
+三、管理员与 API Token
+
+后台入口：/admin
+
+后台使用安装时创建的管理员账号 + 密码登录，不使用旧版后台令牌。
+
+外部 API 调用令牌在后台「API 调用」页面创建。API Token 只用于外部接口调用、每日限额、
+IP 白名单和调用流水统计，不用于后台登录。
+
+四、升级已有站点
+
+v4.0.6 升级包为全量覆盖包。上传覆盖时保留：
+
+   config/config.php
+   config/install.lock
+   config/pan_types.php（如自行添加过网盘类型）
+   uisc/（已经生成的静态页）
+
+覆盖后同样执行 sudo chown -R www:www /www/wwwroot/你的站点目录。
+
+发布包和升级包都不包含运行时配置、安装锁、preview、诊断脚本、历史迁移 SQL 和说明文档。
+升级通常不需要手工执行 SQL；运行时 ensureTables() 与 syncColumns() 会补齐旧表缺列。
+
+如果数据库账号没有建表或 ALTER 权限，再根据当前 sql/install.sql 由管理员手工处理，
+不要使用已经删除的历史迁移文件。
+
+五、同步与静态页
+
+当前有效采集源：
+
+   TMDB：电影、电视剧、综艺等影视数据。
+   红果短剧：国产短剧数据。
+
+只有 active 条目进入条目管理前台和静态页。pending 条目保留在条目暂存，
+刮削成功或手动转化为 active 后才生成静态页。
+
+v5.1.2 可选：如果后台「自动刮削」显示有待处理（缺图）或「资料补全」显示有待处理（缺资料）条目，可在宝塔计划任务设置每分钟执行一次：
+php -d opcache.enable_cli=0 /www/wwwroot/你的站点/cron/scrape_minutely.php
+脚本先每分钟刮削 1 个缺图条目；缺图全部结束后，自动切换为每分钟补全 1 个缺资料条目。每次成功后自动重建该条目的静态页；数据库不需要迁移。
+
+计划任务（宝塔面板 → 计划任务 → 添加任务）：
+
+任务类型统一选「Shell 脚本」，工作目录留空，日志保留天数建议 30 天，
+日志保存位置 /www/wwwlogs/cron/。1.7GB 小机务必让任务错开时间执行，
+不要同一分钟触发多个任务，否则 PHP-FPM 会被打爆。
+
+v5.1.3 起推荐用「统一入口」替代上面逐条分散的任务，只配一条总任务即可：
+
+任务 A（必配）：统一维护入口
+   频率：每 5 分钟（宝塔「N 分钟 → 5 分钟」或 Cron「*/5 * * * *」）
+   命令：
+     php -d opcache.enable_cli=0 /www/wwwroot/你的站点/cron/run.php --quiet
+   说明：入口自带进程锁与状态文件，按时间槽自动调度以下维护任务——
+     每小时增量采集、每天 03:00 限流/缓存/分区清理、每天 03:30 热门同步（全量静态）、
+     每天 04:30 链接失效检测、每天 05:00 过期刷新（全量静态）、每天 06:00 API 流水清理；
+     每 5 分钟还会跑一批「全自动网盘匹配」（v5.1.9）：无人值守给还没有下载地址的条目补网盘链接，
+     无匹配的条目 7 天内不再重复请求，全部试完自动空闲；后台 cron.match_auto_enabled=0 可关闭。
+     若 exec 被禁用导致 `config/pan_pending.txt` 有待处理 ID，也会自动消费网盘待匹配队列。
+   排错：
+     php /www/wwwroot/你的站点/cron/run.php --dry-run   （只列出会跑什么，不执行）
+     php /www/wwwroot/你的站点/cron/run.php --task=link_check   （手动补跑某一时隙）
+     php /www/wwwroot/你的站点/cron/run.php --task=match_auto   （立即手动跑一批自动匹配）
+
+任务 B（必配，与 A 分开）：每分钟刮削 + 资料补全
+   频率：每分钟（宝塔「每分钟」或 Cron「* * * * *」）
+   命令：
+     php -d opcache.enable_cli=0 /www/wwwroot/你的站点/cron/scrape_minutely.php
+   说明：保持 v5.1.2 的每分钟 1 条刮削 / 资料补全，不要并入 5 分钟入口。
+
+★ v5.2.1 起全站自动化只需要上面这 2 条任务（A + B），cron/ 下的脚本全部有归属：
+  A 内部调度 9 个时隙（含 v5.2.1 起默认开启的 pan_transfer），B 每分钟独立跑。
+
+可选时隙（默认关闭，需要时才开，**不需要再加计划任务**）：
+
+- 全量静态页重建 build_static：把 app_settings 里的 cron.build_static_enabled 设为 1，
+  统一入口每天 02:00 自动跑一次。热门同步 03:30 与过期刷新 05:00 末尾已各自全量重建，
+  日常不配也能跑；需要手动重建时用后台「重新生成静态页」按钮，或
+     php -d opcache.enable_cli=0 /www/wwwroot/你的站点/cron/run.php --task=build_static
+  （手动补跑不受开关限制）
+- cron/pan_match_delayed.php 不再需要单独配：exec 可用时由 Sync 自动延迟触发；
+  exec 禁用时由统一入口（任务 A）的 pan_match 时隙自动消费 config/pan_pending.txt。
+
+不需要的任务：任何带 --force / --full 的清理脚本、旧版慢匹配脚本。这些已废弃，不要加。
+
+执行完毕后建议：
+   tail -50 /www/wwwlogs/cron/run.log
+   tail -50 /www/wwwlogs/cron/scrape_minutely.log
+
+如果日志里出现 SQLSTATE / HTTP error / OOM，把 log 内容发给我。
+
+宝塔面板「计划任务」入口：面板左侧「计划任务」→「添加任务」→
+选「Shell 脚本」→ 粘贴上方命令 → 设置 Cron 频率 → 确认。
+
+六、安装后验收
+
+1. 首页 http://你的域名/ 正常显示，不再是「config.php missing」的 JSON 报错。
+2. 访问 install.php 返回 404（安装锁生效）。
+3. 登录 /admin，管理员账号可进后台。
+4. 后台「系统自检」页各项通过。
+5. config/install-info.txt 已删除。
+
+离线自检页 check.php 不在发布包内。需要时单独上传 check.php 到站点根目录，
+查完立即删除，不要长期留在正式站点上。
+
+七、常见故障速查
+
+浏览器报「网络连接异常 / 网站失去响应」，而 http 地址能打开
+   → 站点还没部署 SSL，或 443 没放行。先用 http 完成安装，
+     装完再用宝塔部署 SSL 证书并放行 443。
+
+安装卡在「config/ 目录不可写」
+   → sudo chown -R www:www /www/wwwroot/你的站点目录
+
+宝塔安装数据库失败、提示编译进程被杀掉
+   → 内存不足。先加 2GB swap（见第 0 节第 3 步），数据库改用「极速安装」，
+     版本选 MariaDB 10.4.x。
+
+浏览器打不开宝塔面板
+   → 阿里云安全组放行面板端口，并在面板防火墙里再放行一次。
+
+首页正常但 /admin 或 /api/v1/* 404
+   → Nginx 缺少 try_files，检查伪静态是否保存。
+
+未安装时 /install.php 404
+   → 伪静态误拦了安装器，删除规则里的 install 即可。
+
+后台登录后反复返回登录页
+   → PHP-FPM 会话目录权限问题。项目统一通过 core/Session.php 启动会话。
+
+未安装时访问 / 返回 500 和 {"error":"config.php missing"}
+   → 属正常，未安装时动态入口没有配置可读。走完安装即消失。

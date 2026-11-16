@@ -1,0 +1,126 @@
+/* ---------- 注册 / 登录 / 资源请求 页面 ---------- */
+.u-wrap{max-width:var(--maxw);margin:0 auto;padding:22px var(--pad) 0}
+.u-narrow{max-width:520px;margin-left:auto;margin-right:auto}
+.u-card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px;margin-bottom:16px;color:var(--txt)}
+.u-head{margin-bottom:16px}
+.u-head h1{font-size:20px;margin:0 0 7px;letter-spacing:.3px}
+.u-head p{color:var(--mut);font-size:13.5px;line-height:1.95;margin:0}
+.u-head a{color:var(--pri);font-weight:600}
+.u-field{margin-bottom:14px}
+.u-field>label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--txt)}
+.u-field .tip{color:var(--mut);font-size:12px;margin-top:6px;line-height:1.7}
+.u-in{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+.u-in:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(91,91,214,.14)}
+textarea.u-in{min-height:92px;resize:vertical;line-height:1.75;font-family:inherit}
+select.u-in{background-image:none}
+.u-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.u-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 24px;border:0;border-radius:10px;background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;text-decoration:none;line-height:1.4}
+.u-btn:hover{filter:brightness(1.06);box-shadow:var(--shadow-h)}
+.u-btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt);font-weight:500}
+.u-btn.ghost:hover{background:var(--bg);box-shadow:none;filter:none}
+.u-btn.sm{padding:7px 14px;font-size:13px;font-weight:500}
+.u-alt{color:var(--mut);font-size:13px;margin:16px 0 0;text-align:center}
+.u-alt a{color:var(--pri);font-weight:600}
+.u-flash{border-radius:12px;padding:12px 15px;font-size:13.5px;line-height:1.85;margin-bottom:14px;border:1px solid transparent}
+.u-flash.ok{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+.u-flash.err{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.u-flash.info{background:#eff6ff;color:#1e40af;border-color:#bfdbfe}
+.u-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.u-pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;color:var(--mut)}
+.u-pill b{color:var(--txt)}
+.u-list{display:flex;flex-direction:column;gap:10px}
+.u-item{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg)}
+.u-item .t{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;word-break:break-word}
+.u-item .m{color:var(--mut);font-size:12.5px;margin-top:7px;line-height:1.85}
+.u-item .m a{color:var(--pri)}
+.u-item .n{font-size:13px;margin-top:8px;line-height:1.85;opacity:.94;word-break:break-word}
+.u-badge{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.u-badge.pending{background:#fef3c7;color:#92400e}
+.u-badge.found{background:#dcfce7;color:#166534}
+.u-badge.notfound{background:#f1f5f9;color:#475569}
+.u-badge.replied{background:#dbeafe;color:#1e40af}
+.u-badge.closed{background:#f3f4f6;color:#6b7280}
+.u-reply{margin-top:9px;padding:10px 13px;border-left:3px solid var(--pri);background:var(--card);border-radius:0 9px 9px 0;font-size:13px;line-height:1.85}
+.u-empty{color:var(--mut);font-size:13.5px;padding:26px 8px;text-align:center}
+.u-hintbox{display:none;margin-top:9px;font-size:13px;line-height:2;border-radius:11px;padding:11px 13px;background:var(--bg);border:1px dashed var(--line);color:var(--mut)}
+.u-hintbox.on{display:block}
+.u-hintbox a{color:var(--pri);font-weight:600;margin-right:10px;white-space:nowrap}
+.u-lock{text-align:center;padding:26px 12px}
+.u-lock .ico{font-size:34px;line-height:1}
+.u-lock h3{margin:12px 0 8px;font-size:16px}
+.u-lock p{color:var(--mut);font-size:13.5px;line-height:1.95;margin:0 0 18px}
+.u-cap{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.u-cap .q{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 15px;font-size:15px;font-weight:800;letter-spacing:1.5px;color:var(--pri);white-space:nowrap}
+.u-cap .u-in{flex:1;min-width:130px}
+.u-hp{position:absolute!important;left:-9999px!important;top:auto;width:1px;height:1px;opacity:0;overflow:hidden}
+.u-pager{display:flex;gap:8px;justify-content:center;align-items:center;margin:18px 0 2px;flex-wrap:wrap}
+.u-pager a,.u-pager span{border:1px solid var(--line);border-radius:9px;padding:7px 14px;font-size:13px;background:var(--bg);color:var(--txt)}
+.u-pager span:last-child,.u-pager span:first-child{color:var(--mut)}
+.u-pager a:hover{border-color:var(--pri);color:var(--pri)}
+
+/* 顶部用户区（顶栏里的登录 / 注册 / 我的请求） */
+.uarea{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.uarea .uname{color:#fff;font-size:13px;opacity:.92;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+
+/* ≤900：两栏改单栏 */
+@media (max-width:900px){
+  .u-wrap{padding-top:18px}
+}
+/* ≤560：表单两列改一列，按钮铺满（拇指更好点） */
+@media (max-width:560px){
+  .u-card{padding:17px 15px;border-radius:14px}
+  .u-head h1{font-size:18px}
+  .u-row2{grid-template-columns:1fr;gap:0}
+  .u-btn{width:100%}
+  .u-btn.sm{width:auto}
+  .u-in{font-size:16px}          /* 16px 可阻止 iOS 聚焦时整页放大 */
+  .u-lock{padding:18px 4px}
+}
+@media (max-width:380px){
+  .u-head h1{font-size:17px}
+  .u-pill{padding:5px 10px;font-size:12px}
+}
+/* 触屏：去掉 hover 粘滞（手机上点完不会"卡住浮起"） */
+@media (hover:none){
+  .u-btn:hover{filter:none;box-shadow:none}
+  .u-btn.ghost:hover{background:transparent}
+  .u-pager a:hover{border-color:var(--line);color:var(--txt)}
+}
+@media (prefers-reduced-motion:reduce){
+  .u-btn,.u-in{transition:none}
+}
+/* 打印：去掉顶栏页脚，卡片边框简化 */
+@media print{
+  .topbar,.mainnav,.foot,.u-pager,.u-btn{display:none!important}
+  .u-card{box-shadow:none;border-color:#ddd}
+}
+/* 暗色：简约模板强制暗色 */
+.tpl-simple.mode-dark .u-flash.ok{background:#10321f;color:#6ee7b7;border-color:#1c4a33}
+.tpl-simple.mode-dark .u-flash.err{background:#3a1a1c;color:#fca5a5;border-color:#5a2a2d}
+.tpl-simple.mode-dark .u-flash.info{background:#152238;color:#93c5fd;border-color:#1e3a5f}
+.tpl-simple.mode-dark .u-badge.pending{background:#3a2f12;color:#fbbf24}
+.tpl-simple.mode-dark .u-badge.found{background:#10321f;color:#6ee7b7}
+.tpl-simple.mode-dark .u-badge.notfound{background:#26304a;color:#c3cad8}
+.tpl-simple.mode-dark .u-badge.replied{background:#152238;color:#93c5fd}
+.tpl-simple.mode-dark .u-badge.closed{background:#232b3c;color:#9aa3b8}
+.tpl-simple.mode-dark .u-in{background:#131a29}
+.tpl-simple.mode-dark .u-item,.tpl-simple.mode-dark .u-pill,.tpl-simple.mode-dark .u-pager a,.tpl-simple.mode-dark .u-pager span{background:#1b2233}
+.tpl-simple.mode-dark .u-reply{background:#1b2233}
+/* 暗色：跟随系统（经典与简约模板通用） */
+@media (prefers-color-scheme:dark){
+  body.mode-auto .u-flash.ok{background:#10321f;color:#6ee7b7;border-color:#1c4a33}
+  body.mode-auto .u-flash.err{background:#3a1a1c;color:#fca5a5;border-color:#5a2a2d}
+  body.mode-auto .u-flash.info{background:#152238;color:#93c5fd;border-color:#1e3a5f}
+  body.mode-auto .u-badge.pending{background:#3a2f12;color:#fbbf24}
+  body.mode-auto .u-badge.found{background:#10321f;color:#6ee7b7}
+  body.mode-auto .u-badge.notfound{background:#26304a;color:#c3cad8}
+  body.mode-auto .u-badge.replied{background:#152238;color:#93c5fd}
+  body.mode-auto .u-badge.closed{background:#232b3c;color:#9aa3b8}
+  body.mode-auto .u-in{background:#131a29}
+  body.mode-auto .u-item,body.mode-auto .u-pill,body.mode-auto .u-pager a,body.mode-auto .u-pager span{background:#182034}
+  body.mode-auto .u-reply{background:#182034}
+}
+/* 刘海屏 / 底部横条安全区（放在本文件样式表最后） */
+@supports(padding:max(0px)){
+  .u-wrap{padding-left:max(var(--pad),env(safe-area-inset-left));padding-right:max(var(--pad),env(safe-area-inset-right))}
+}
