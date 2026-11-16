@@ -1,2 +1,0 @@
-<?php
-namespace Adapters;require_once __DIR__.'/../core/Guard.php';ml_guard_shield(__FILE__);interface Adapter{public function search($a,$b,$c='');public function detail($a,$b);public function trending($a='week',$b=20,$c='both');public function trendingFetch(array $a,$b=20,$c='both');public function normalize(array $a,$b);}
